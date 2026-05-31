@@ -42,6 +42,10 @@ enum class ID {
     MODE_1_ALL,
     MODE_2_ONE,
     SETTINGS_SAVED,
+    TUI_HELP,
+    TUI_DONE,
+    TUI_EMPTY,
+    TUI_HIDDEN,
     _COUNT
 };
 

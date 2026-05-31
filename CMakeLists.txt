@@ -48,6 +48,7 @@ set(CONSOLE_SOURCES
     src/config/config_manager.cpp
     src/core/randomizer.cpp
     src/ui/console_ui.cpp
+    src/ui/tui.cpp
     src/i18n/localizer.cpp
 )
 

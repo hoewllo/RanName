@@ -4,6 +4,7 @@
 #include "data/name_list.h"
 #include "core/randomizer.h"
 #include "ui/console_ui.h"
+#include "ui/tui.h"
 #include "utils/platform.h"
 #include "i18n/localizer.h"
 
@@ -12,6 +13,7 @@ private:
     config::ConfigManager configManager;
     data::NameList nameList;
     core::Randomizer* randomizer;
+    ui::TUI tui;
     bool langSet;
 
 public:
@@ -29,7 +31,6 @@ public:
 
         configManager.loadFromFile("data/config.conf");
 
-        // Only read language from config if --lang was not specified
         if (!langSet) {
             i18n::Localizer::setLanguage(
                 i18n::Localizer::parseLanguage(configManager.getLanguage()));
@@ -44,35 +45,62 @@ public:
     }
 
     void run() {
+        if (nameList.isEmpty()) {
+            tui.showEmptyScreen();
+            return;
+        }
+
+        setupRandomizer();
+        bool hideNext = false;
+
         while (true) {
-            showMainScreen();
-
-            if (nameList.isEmpty()) {
-                ui::ConsoleUI::showMessage(i18n::Localizer::get(i18n::ID::LIST_EMPTY));
-                ui::ConsoleUI::waitForEnter();
-                continue;
-            }
-
-            performRandomPicking();
-
-            if (!ui::ConsoleUI::askYesNo(i18n::Localizer::get(i18n::ID::CONTINUE_ASK))) {
+            if (!randomizer->hasNext()) {
+                tui.showDoneScreen();
                 break;
             }
+
+            size_t index = randomizer->getNextIndex();
+            const std::string& name = nameList.getNameAt(index);
+            size_t current = nameList.getCount() - randomizer->getRemainingCount() - 1;
+            size_t total = nameList.getCount();
+            hideNext = false;
+
+            while (true) {
+                tui.showPickScreen(name, current, total,
+                                  configManager.getModeDescription(), hideNext);
+
+                ui::TUIAction action = tui.getAction();
+                if (action == ui::TUIAction::NEXT) {
+                    break;
+                } else if (action == ui::TUIAction::QUIT) {
+                    utils::Platform::setRawMode(false);
+                    return;
+                } else if (action == ui::TUIAction::HIDE) {
+                    hideNext = !hideNext;
+                } else if (action == ui::TUIAction::MODE_ALL) {
+                    configManager.setMode(config::PickMode::ALL_RANDOM);
+                    delete randomizer;
+                    randomizer = new core::Randomizer(core::RandomMode::ALL_RANDOM);
+                    randomizer->initialize(nameList.getNames());
+                    hideNext = false;
+                    continue;
+                } else if (action == ui::TUIAction::MODE_ONE) {
+                    configManager.setMode(config::PickMode::ONE_BY_ONE);
+                    delete randomizer;
+                    randomizer = new core::Randomizer(core::RandomMode::ONE_BY_ONE);
+                    randomizer->initialize(nameList.getNames());
+                    hideNext = false;
+                    continue;
+                }
+            }
         }
+
+        utils::Platform::setRawMode(false);
     }
 
 private:
-    void showMainScreen() {
-        ui::ConsoleUI::showMainMenu();
-        std::cout << i18n::Localizer::get(i18n::ID::PREPARING) << std::endl;
-        std::cout << i18n::Localizer::get(i18n::ID::CURRENT_MODE) << configManager.getModeDescription() << std::endl;
-        std::cout << i18n::Localizer::get(i18n::ID::NAME_COUNT) << nameList.getCount() << std::endl;
-        std::cout << i18n::Localizer::get(i18n::ID::SETUP_HINT) << std::endl;
-
-        ui::ConsoleUI::showProgress(i18n::Localizer::get(i18n::ID::PLEASE_WAIT));
-    }
-
-    void performRandomPicking() {
+    void setupRandomizer() {
+        delete randomizer;
         core::RandomMode coreMode;
         switch (configManager.getMode()) {
             case config::PickMode::ONE_BY_ONE:
@@ -83,25 +111,12 @@ private:
                 coreMode = core::RandomMode::ALL_RANDOM;
                 break;
         }
-
-        delete randomizer;
         randomizer = new core::Randomizer(coreMode);
         randomizer->initialize(nameList.getNames());
-
-        while (randomizer->hasNext()) {
-            ui::ConsoleUI::showRandomPickingHeader();
-            size_t index = randomizer->getNextIndex();
-            ui::ConsoleUI::showName(nameList.getNameAt(index), randomizer->getRemainingCount());
-            ui::ConsoleUI::waitForEnter();
-        }
-
-        ui::ConsoleUI::showMessage(i18n::Localizer::get(i18n::ID::END));
-        utils::Platform::sleep(1000);
     }
 };
 
 int main(int argc, char* argv[]) {
-    // Parse --lang argument
     bool langSetByArg = false;
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];

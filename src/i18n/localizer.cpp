@@ -41,6 +41,10 @@ static const char* enUS[] = {
     "1. All Random",
     "2. One by One",
     "Settings saved.",
+    "[Space:Next] [q:Quit] [h:Hide] [a:All] [o:One]",
+    "All names picked! Press any key to exit.",
+    "List is empty! Press any key to exit.",
+    "*** Hidden ***",
 };
 
 static const char* zhCN[] = {
@@ -80,6 +84,10 @@ static const char* zhCN[] = {
     "1. 全部覆盖的随机",
     "2. 逐个随机",
     "设置已保存。",
+    "[Space:下一个] [q:退出] [h:隐藏] [a:全局随机] [o:逐个随机]",
+    "所有人员已点名完毕！按任意键退出。",
+    "名单为空！按任意键退出。",
+    "*** 已隐藏 ***",
 };
 
 void Localizer::setLanguage(Language lang) {

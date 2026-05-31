@@ -11,7 +11,10 @@ namespace utils {
         static void setUTF8Encoding();
         static void sleep(unsigned int milliseconds);
         static void createDirectory(const std::string& path);
+        static int getTerminalWidth();
+        static void setRawMode(bool enable);
+        static char getChar();
     };
 }
 
-#endif // PLATFORM_H
+#endif
