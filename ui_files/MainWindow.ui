@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>mainWindow</class>
+ <widget class="QMainWindow" name="mainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>728</width>
+    <height>463</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>随机人员选择器 - 主窗口</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTextBrowser" name="titleShower">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="markdown">
+     <string>随机人员选择器
+
+</string>
+    </property>
+   </widget>
+   <widget class="QProgressBar" name="progressShower">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>330</y>
+      <width>311</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>24</number>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="BrowserName">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>611</width>
+      <height>271</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>50</pointsize>
+     </font>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ButtonNext">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>320</y>
+      <width>181</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>20</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>下一个</string>
+    </property>
+   </widget>
+   <widget class="QTextBrowser" name="textBrowser">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>380</y>
+      <width>71</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>1</pointsize>
+     </font>
+    </property>
+    <property name="markdown">
+     <string>Jianyin Li,使用  Qt 框架
+
+</string>
+    </property>
+   </widget>
+   <zorder>BrowserName</zorder>
+   <zorder>titleShower</zorder>
+   <zorder>progressShower</zorder>
+   <zorder>ButtonNext</zorder>
+   <zorder>textBrowser</zorder>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>728</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>随机人员选择器</string>
+    </property>
+    <widget class="QMenu" name="menu_chmode">
+     <property name="title">
+      <string>更改模式</string>
+     </property>
+     <addaction name="action_m_all"/>
+     <addaction name="action_per"/>
+    </widget>
+    <addaction name="actionExit"/>
+    <addaction name="separator"/>
+    <addaction name="action_hidenp"/>
+    <addaction name="separator"/>
+    <addaction name="menu_chmode"/>
+   </widget>
+   <addaction name="menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="action_hidenp">
+   <property name="text">
+    <string>隐藏下一位</string>
+   </property>
+  </action>
+  <action name="action_m_all">
+   <property name="text">
+    <string>全部覆盖的随机</string>
+   </property>
+  </action>
+  <action name="action_per">
+   <property name="text">
+    <string>逐个随机</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,32 @@
+# Build directory
+build/
+
+# Compiled object files
+*.o
+*.obj
+*.exe
+
+# Qt auto-generated files
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*_autogen/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime data
+data/config.conf
+data/namelist.txt
+
+# Translation compiled files
+*.qm
