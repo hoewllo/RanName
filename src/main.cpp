@@ -5,69 +5,74 @@
 #include "core/randomizer.h"
 #include "ui/console_ui.h"
 #include "utils/platform.h"
+#include "i18n/localizer.h"
 
 class Application {
 private:
     config::ConfigManager configManager;
     data::NameList nameList;
     core::Randomizer* randomizer;
-    
+    bool langSet;
+
 public:
-    Application() : randomizer(nullptr) {
+    Application(bool langSetByArg = false) : randomizer(nullptr), langSet(langSetByArg) {
         initialize();
     }
-    
+
     ~Application() {
         delete randomizer;
     }
-    
+
     void initialize() {
-        // Setup platform
         utils::Platform::setUTF8Encoding();
         utils::Platform::createDirectory("data");
-        
-        // Load configuration and data
+
         configManager.loadFromFile("data/config.conf");
+
+        // Only read language from config if --lang was not specified
+        if (!langSet) {
+            i18n::Localizer::setLanguage(
+                i18n::Localizer::parseLanguage(configManager.getLanguage()));
+        }
+
         nameList.loadFromFile("data/namelist.txt");
-        
-        // Update name count in config if needed
+
         if (configManager.getNameCount() != nameList.getCount()) {
             configManager.setNameCount(nameList.getCount());
             configManager.saveToFile("data/config.conf");
         }
     }
-    
+
     void run() {
         while (true) {
             showMainScreen();
-            
+
             if (nameList.isEmpty()) {
-                ui::ConsoleUI::showMessage("名单为空，请先配置名单。");
+                ui::ConsoleUI::showMessage(i18n::Localizer::get(i18n::ID::LIST_EMPTY));
                 ui::ConsoleUI::waitForEnter();
                 continue;
             }
-            
+
             performRandomPicking();
-            
-            if (!ui::ConsoleUI::askYesNo("继续使用吗？")) {
+
+            if (!ui::ConsoleUI::askYesNo(i18n::Localizer::get(i18n::ID::CONTINUE_ASK))) {
                 break;
             }
         }
     }
-    
+
 private:
     void showMainScreen() {
         ui::ConsoleUI::showMainMenu();
-        std::cout << "最后等待一下，您的理想课堂中的随机点名程序正在进行使用前的最后准备..." << std::endl;
-        std::cout << "当前点名模式：" << configManager.getModeDescription() << std::endl;
-        std::cout << "名单人数：" << nameList.getCount() << std::endl;
-        std::cout << "您可以通过setup.exe进行设置。" << std::endl;
-        
-        ui::ConsoleUI::showProgress("请稍后");
+        std::cout << i18n::Localizer::get(i18n::ID::PREPARING) << std::endl;
+        std::cout << i18n::Localizer::get(i18n::ID::CURRENT_MODE) << configManager.getModeDescription() << std::endl;
+        std::cout << i18n::Localizer::get(i18n::ID::NAME_COUNT) << nameList.getCount() << std::endl;
+        std::cout << i18n::Localizer::get(i18n::ID::SETUP_HINT) << std::endl;
+
+        ui::ConsoleUI::showProgress(i18n::Localizer::get(i18n::ID::PLEASE_WAIT));
     }
-    
+
     void performRandomPicking() {
-        // Convert config mode to core mode
         core::RandomMode coreMode;
         switch (configManager.getMode()) {
             case config::PickMode::ONE_BY_ONE:
@@ -78,25 +83,35 @@ private:
                 coreMode = core::RandomMode::ALL_RANDOM;
                 break;
         }
-        
+
         delete randomizer;
         randomizer = new core::Randomizer(coreMode);
         randomizer->initialize(nameList.getNames());
-        
+
         while (randomizer->hasNext()) {
             ui::ConsoleUI::showRandomPickingHeader();
             size_t index = randomizer->getNextIndex();
             ui::ConsoleUI::showName(nameList.getNameAt(index), randomizer->getRemainingCount());
             ui::ConsoleUI::waitForEnter();
         }
-        
-        ui::ConsoleUI::showMessage("结束");
+
+        ui::ConsoleUI::showMessage(i18n::Localizer::get(i18n::ID::END));
         utils::Platform::sleep(1000);
     }
 };
 
-int main() {
-    Application app;
+int main(int argc, char* argv[]) {
+    // Parse --lang argument
+    bool langSetByArg = false;
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--lang" && i + 1 < argc) {
+            i18n::Localizer::setLanguage(i18n::Localizer::parseLanguage(argv[++i]));
+            langSetByArg = true;
+        }
+    }
+
+    Application app(langSetByArg);
     app.run();
     return 0;
 }

@@ -25,6 +25,8 @@ private slots:
     void onHideNextActionTriggered();
     void onAllRandomActionTriggered();
     void onOneByOneActionTriggered();
+    void onLanguageEnglish();
+    void onLanguageChinese();
 
 private:
     void loadNamesFromFile();
@@ -32,14 +34,15 @@ private:
     void initializeRandomizer();
     void updateProgress();
     void updateTime();
+    void retranslateStrings();
 
     Ui::mainWindow *ui;
     std::vector<std::string> names;
     std::vector<size_t> randomIndices;
     size_t currentIndex;
     bool hideNextPerson;
-    int pickMode; // 1: 全部覆盖的随机, 2: 逐个随机
+    int pickMode;
     QTimer *timer;
 };
 
-#endif // MAIN_WINDOW_H
+#endif

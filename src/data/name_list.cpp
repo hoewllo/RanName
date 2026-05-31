@@ -1,4 +1,5 @@
 #include "name_list.h"
+#include "../i18n/localizer.h"
 #include <fstream>
 #include <iostream>
 
@@ -8,7 +9,7 @@ namespace data {
     bool NameList::loadFromFile(const std::string& filename) {
         std::ifstream file(filename);
         if (!file.is_open()) {
-            std::cerr << "无法打开名单文件: " << filename << std::endl;
+            std::cerr << i18n::Localizer::get(i18n::ID::UNABLE_OPEN_LIST) << filename << std::endl;
             return false;
         }
 

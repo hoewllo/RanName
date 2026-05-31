@@ -13,7 +13,8 @@ namespace config {
     private:
         PickMode mode;
         size_t nameCount;
-        
+        std::string language;
+
     public:
         ConfigManager();
         bool loadFromFile(const std::string& filename);
@@ -23,7 +24,9 @@ namespace config {
         void setNameCount(size_t count);
         size_t getNameCount() const;
         std::string getModeDescription() const;
+        void setLanguage(const std::string& lang);
+        std::string getLanguage() const;
     };
 }
 
-#endif // CONFIG_MANAGER_H
+#endif

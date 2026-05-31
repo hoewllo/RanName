@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/i18n">
+        <file alias="RandomNamePicker_zh_CN.qm">trans/RandomNamePicker_zh_CN.qm</file>
+        <file alias="RandomNamePicker_en_US.qm">trans/RandomNamePicker_en_US.qm</file>
+    </qresource>
+</RCC>

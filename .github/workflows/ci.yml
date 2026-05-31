@@ -1,0 +1,323 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+  PROJECT_NAME: RandomNamePicker
+
+jobs:
+  code-quality-checks:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install code quality tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-tidy \
+            cppcheck \
+            valgrind
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=all --suppress=missingIncludeSystem \
+            --suppress=unmatchedSuppression \
+            --error-exitcode=1 \
+            --inline-suppr \
+            --std=c++17 \
+            --platform=unix64 \
+            -I src \
+            src/ tools/ || echo "cppcheck completed with warnings"
+
+      - name: Upload code quality reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-reports
+          path: |
+            cppcheck-results.xml
+          retention-days: 7
+
+  build-windows-mingw:
+    name: Build Windows (MinGW)
+    runs-on: windows-latest
+    continue-on-error: true
+    needs: [ code-quality-checks ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install MinGW
+        run: |
+          choco install mingw --version 13.2.0 --params="/InstallDir:C:\mingw64 /Architecture:x86_64" -y
+          $env:Path = "C:\mingw64\bin;" + $env:Path
+          [Environment]::SetEnvironmentVariable("Path", $env:Path, [EnvironmentVariableTarget]::Process)
+          gcc --version
+
+      - name: Install build tools
+        run: |
+          choco install ninja -y
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+
+      - name: Configure CMake
+        run: |
+          cmake -B build/mingw -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build
+        run: |
+          cmake --build build/mingw --config Release
+
+      - name: Create package with CPack
+        run: |
+          cd build/mingw
+          cpack -G ZIP -C Release
+          Get-ChildItem "*.zip" -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "  - $($_.Name)"
+          }
+
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-mingw-packages
+          path: |
+            build/mingw/*.zip
+            build/mingw/bin/*.exe
+          retention-days: 7
+
+  build-linux-gcc:
+    name: Build Linux (GCC)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: [ code-quality-checks ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            qt6-base-dev \
+            libqt6widgets6
+
+      - name: Configure CMake
+        run: |
+          cmake -B build/linux -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: |
+          cmake --build build/linux
+
+      - name: Create package
+        run: |
+          cd build/linux
+          mkdir -p package/bin
+          cp bin/RandomNamePicker bin/SetupTool package/bin/
+          if [ -f bin/RandomNamePickerGUI ]; then cp bin/RandomNamePickerGUI package/bin/; fi
+          tar czf RandomNamePicker-${{ env.BUILD_TYPE }}-Linux.tar.gz -C package .
+
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            build/linux/*.tar.gz
+            build/linux/bin/*
+          retention-days: 7
+
+  build-linux-arm64:
+    name: Build Linux ARM64 (GCC)
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+    needs: [ code-quality-checks ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            qt6-base-dev \
+            libqt6widgets6
+
+      - name: Configure CMake
+        run: |
+          cmake -B build/linux-arm64 -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: |
+          cmake --build build/linux-arm64
+
+      - name: Create package
+        run: |
+          cd build/linux-arm64
+          mkdir -p package/bin
+          cp bin/RandomNamePicker bin/SetupTool package/bin/
+          if [ -f bin/RandomNamePickerGUI ]; then cp bin/RandomNamePickerGUI package/bin/; fi
+          tar czf RandomNamePicker-${{ env.BUILD_TYPE }}-Linux-ARM64.tar.gz -C package .
+
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-packages
+          path: |
+            build/linux-arm64/*.tar.gz
+            build/linux-arm64/bin/*
+          retention-days: 7
+
+  build-macos-clang:
+    name: Build macOS (Clang)
+    runs-on: macos-latest
+    continue-on-error: true
+    needs: [ code-quality-checks ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install cmake ninja qt@6
+
+      - name: Configure CMake
+        run: |
+          export Qt6_DIR="$(brew --prefix qt@6)/lib/cmake/Qt6"
+          echo "Qt6_DIR=$Qt6_DIR"
+          cmake -B build/macos -G Ninja -DCMAKE_BUILD_TYPE=Release -DQt6_DIR="$Qt6_DIR" -DCMAKE_INSTALL_PREFIX=/usr/local
+
+      - name: Build
+        run: |
+          cmake --build build/macos
+
+      - name: Create package with CPack
+        run: |
+          cd build/macos
+          cpack -G ZIP -C Release
+
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-packages
+          path: |
+            build/macos/*.zip
+            build/macos/bin/*
+          retention-days: 7
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs:
+      [
+        build-windows-mingw,
+        build-linux-gcc,
+        build-linux-arm64,
+        build-macos-clang,
+      ]
+    if: |
+      startsWith(github.ref, 'refs/tags/v') &&
+      needs.build-windows-mingw.result == 'success' &&
+      needs.build-linux-gcc.result == 'success' &&
+      needs.build-linux-arm64.result == 'success' &&
+      needs.build-macos-clang.result == 'success'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ github.run_number }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.exe
+            artifacts/**/*.tar.gz
+          draft: false
+          prerelease: false
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs:
+      [
+        build-windows-mingw,
+        build-linux-gcc,
+        build-linux-arm64,
+        build-macos-clang,
+        create-release,
+      ]
+    if: always()
+
+    steps:
+      - name: Display build status
+        run: |
+          echo "=== Build Status Summary ==="
+          echo "Code Quality Checks: ${{ needs.code-quality-checks.result }}"
+          echo "Windows MinGW: ${{ needs.build-windows-mingw.result }}"
+          echo "Linux GCC: ${{ needs.build-linux-gcc.result }}"
+          echo "Linux ARM64: ${{ needs.build-linux-arm64.result }}"
+          echo "macOS Clang: ${{ needs.build-macos-clang.result }}"
+          echo "Create Release: ${{ needs.create-release.result }}"
+          echo "============================"
+
+          FAILED_JOBS=""
+          if [[ "${{ needs.code-quality-checks.result }}" == "failure" ]]; then FAILED_JOBS="$FAILED_JOBS Code Quality Checks"; fi
+          if [[ "${{ needs.build-windows-mingw.result }}" == "failure" ]]; then FAILED_JOBS="$FAILED_JOBS Windows MinGW"; fi
+          if [[ "${{ needs.build-linux-gcc.result }}" == "failure" ]]; then FAILED_JOBS="$FAILED_JOBS Linux GCC"; fi
+          if [[ "${{ needs.build-linux-arm64.result }}" == "failure" ]]; then FAILED_JOBS="$FAILED_JOBS Linux ARM64"; fi
+          if [[ "${{ needs.build-macos-clang.result }}" == "failure" ]]; then FAILED_JOBS="$FAILED_JOBS macOS Clang"; fi
+          if [[ "${{ needs.create-release.result }}" == "failure" ]]; then FAILED_JOBS="$FAILED_JOBS Create Release"; fi
+
+          if [[ -n "$FAILED_JOBS" ]]; then
+            echo "Failed jobs:$FAILED_JOBS"
+            echo "Some builds failed. Check the logs for details."
+            exit 1
+          else
+            echo "All builds completed successfully!"
+          fi

@@ -1,5 +1,6 @@
 #include "console_ui.h"
 #include "../utils/platform.h"
+#include "../i18n/localizer.h"
 #include <iostream>
 #include <string>
 
@@ -13,20 +14,20 @@ namespace ui {
     }
 
     void ConsoleUI::showMainMenu() {
-        showTitle("随机点名程序");
+        showTitle(i18n::Localizer::get(i18n::ID::TITLE_MAIN));
     }
 
     void ConsoleUI::showConfigurationMenu() {
-        showTitle("随机点名配置");
+        showTitle(i18n::Localizer::get(i18n::ID::TITLE_CONFIG));
     }
 
     void ConsoleUI::showRandomPickingHeader() {
-        showTitle("随机点名");
+        showTitle(i18n::Localizer::get(i18n::ID::TITLE_PICKING));
     }
 
     void ConsoleUI::showName(const std::string& name, size_t remaining) {
-        std::cout << "姓名：" << name << std::endl;
-        std::cout << "剩余：" << remaining << "人" << std::endl;
+        std::cout << i18n::Localizer::get(i18n::ID::NAME_LABEL) << name << std::endl;
+        std::cout << i18n::Localizer::get(i18n::ID::REMAINING_LABEL) << remaining << i18n::Localizer::get(i18n::ID::PERSON_UNIT) << std::endl;
     }
 
     void ConsoleUI::showMessage(const std::string& message) {
@@ -49,7 +50,7 @@ namespace ui {
             if (input.size() == 1 && input[0] >= '0' + min && input[0] <= '0' + max) {
                 return input[0] - '0';
             }
-            std::cout << "无效输入，请重新选择。" << std::endl;
+            std::cout << i18n::Localizer::get(i18n::ID::INVALID_INPUT) << std::endl;
         }
     }
 
@@ -60,7 +61,7 @@ namespace ui {
     }
 
     void ConsoleUI::waitForEnter() {
-        std::cout << "按回车继续...";
+        std::cout << i18n::Localizer::get(i18n::ID::PRESS_ENTER);
         getUserInput();
     }
 

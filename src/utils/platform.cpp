@@ -1,4 +1,5 @@
 #include "platform.h"
+#include "../i18n/localizer.h"
 #include <iostream>
 
 #ifdef _WIN32
@@ -28,7 +29,11 @@ namespace utils {
         #ifdef _WIN32
             system("chcp 65001 > nul");
         #endif
-        std::setlocale(LC_ALL, "zh_CN.UTF-8");
+        std::string locale = "en_US.UTF-8";
+        if (i18n::Localizer::getLanguage() == i18n::Language::ZH_CN) {
+            locale = "zh_CN.UTF-8";
+        }
+        std::setlocale(LC_ALL, locale.c_str());
     }
 
     void Platform::sleep(unsigned int milliseconds) {

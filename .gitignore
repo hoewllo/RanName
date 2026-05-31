@@ -24,6 +24,17 @@ ui_*.h
 .DS_Store
 Thumbs.db
 
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+*.cmake
+
+# Install directory
+install/
+
 # Runtime data
 data/config.conf
 data/namelist.txt

@@ -1,15 +1,16 @@
 #include "config_manager.h"
+#include "../i18n/localizer.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
 namespace config {
-    ConfigManager::ConfigManager() : mode(PickMode::ALL_RANDOM), nameCount(0) {}
+    ConfigManager::ConfigManager() : mode(PickMode::ALL_RANDOM), nameCount(0), language("en_US") {}
 
     bool ConfigManager::loadFromFile(const std::string& filename) {
         std::ifstream configFile(filename);
         if (!configFile.is_open()) {
-            std::cerr << "无法打开配置文件: " << filename << std::endl;
+            std::cerr << i18n::Localizer::get(i18n::ID::UNABLE_OPEN_CONFIG) << filename << std::endl;
             return false;
         }
 
@@ -20,6 +21,12 @@ namespace config {
                 mode = static_cast<PickMode>(modeValue);
             } else if (line.find("[name_count]=") != std::string::npos) {
                 nameCount = std::stoul(line.substr(line.find("=") + 1));
+            } else if (line.find("[language]=") != std::string::npos) {
+                language = line.substr(line.find("=") + 1);
+                // Trim whitespace
+                if (!language.empty() && language[0] == ' ') {
+                    language = language.substr(1);
+                }
             }
         }
         configFile.close();
@@ -29,12 +36,13 @@ namespace config {
     bool ConfigManager::saveToFile(const std::string& filename) const {
         std::ofstream configFile(filename);
         if (!configFile.is_open()) {
-            std::cerr << "无法打开配置文件进行写入: " << filename << std::endl;
+            std::cerr << i18n::Localizer::get(i18n::ID::UNABLE_WRITE_CONFIG) << filename << std::endl;
             return false;
         }
 
         configFile << "[mode]= " << static_cast<int>(mode) << std::endl;
         configFile << "[name_count]= " << nameCount << std::endl;
+        configFile << "[language]= " << language << std::endl;
         configFile.close();
         return true;
     }
@@ -58,11 +66,19 @@ namespace config {
     std::string ConfigManager::getModeDescription() const {
         switch (mode) {
             case PickMode::ALL_RANDOM:
-                return "全局随机";
+                return i18n::Localizer::get(i18n::ID::MODE_ALL_RANDOM);
             case PickMode::ONE_BY_ONE:
-                return "逐个随机";
+                return i18n::Localizer::get(i18n::ID::MODE_ONE_BY_ONE);
             default:
-                return "全局随机";
+                return i18n::Localizer::get(i18n::ID::MODE_ALL_RANDOM);
         }
+    }
+
+    void ConfigManager::setLanguage(const std::string& lang) {
+        language = lang;
+    }
+
+    std::string ConfigManager::getLanguage() const {
+        return language;
     }
 }

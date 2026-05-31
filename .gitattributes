@@ -1,0 +1,51 @@
+# Text files
+VERSION -text
+*.txt -text
+*.md -text
+README* -text
+LICENSE* -text
+
+# Source code
+*.cpp linguist-language=C++
+*.h linguist-language=C++
+*.hpp linguist-language=C++
+*.c linguist-language=C
+*.cc linguist-language=C++
+
+# Qt files
+*.ui linguist-language=XML
+*.qrc linguist-language=XML
+*.ts linguist-language=XML
+
+# Configuration
+*.yml linguist-language=YAML
+*.yaml linguist-language=YAML
+*.json linguist-language=JSON
+CMakeLists.txt linguist-language=CMake
+*.cmake linguist-language=CMake
+
+# Documentation
+*.md linguist-language=Markdown
+*.rst linguist-language=reStructuredText
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+
+# Line endings
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.c text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+CMakeLists.txt text eol=lf

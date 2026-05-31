@@ -3,11 +3,12 @@
 #include "../config/config_manager.h"
 #include "../data/name_list.h"
 #include "../core/randomizer.h"
+#include "../i18n/localizer.h"
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
 #include <QMessageBox>
-#include <QObject>  // 添加QObject头文件
+#include <QObject>
 #include <fstream>
 #include <random>
 #include <algorithm>
@@ -17,29 +18,26 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::mainWindow),
     currentIndex(0),
     hideNextPerson(false),
-    pickMode(1) // 默认全部覆盖的随机
+    pickMode(1)
 {
     ui->setupUi(this);
-    
-    // 初始化定时器
+
     timer = new QTimer(this);
-    
-    // 连接信号和槽 - 使用Qt5兼容语法
+
     QObject::connect(ui->ButtonNext, &QPushButton::clicked, this, &MainWindow::onNextButtonClicked);
     QObject::connect(timer, &QTimer::timeout, this, &MainWindow::onTimerTimeout);
     QObject::connect(ui->actionExit, &QAction::triggered, this, &MainWindow::onExitActionTriggered);
     QObject::connect(ui->action_hidenp, &QAction::triggered, this, &MainWindow::onHideNextActionTriggered);
     QObject::connect(ui->action_m_all, &QAction::triggered, this, &MainWindow::onAllRandomActionTriggered);
     QObject::connect(ui->action_per, &QAction::triggered, this, &MainWindow::onOneByOneActionTriggered);
-    
-    // 加载名单和配置
+
+    retranslateStrings();
+
     loadNamesFromFile();
     initializeRandomizer();
-    
-    // 启动定时器
+
     timer->start(1000);
-    
-    // 更新界面
+
     updateUI();
 }
 
@@ -48,11 +46,25 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::retranslateStrings()
+{
+    ui->titleShower->setMarkdown(tr("Random Name Picker"));
+    ui->ButtonNext->setText(tr("Next"));
+    ui->textBrowser->setMarkdown(tr("Jianyin Li, Powered by Qt Framework"));
+    setWindowTitle(tr("Random Name Picker - Main Window"));
+
+    ui->menu->setTitle(tr("Random Name Picker"));
+    ui->menu_chmode->setTitle(tr("Change Mode"));
+    ui->action_hidenp->setText(tr("Hide Next Person"));
+    ui->action_m_all->setText(tr("All Random"));
+    ui->action_per->setText(tr("One by One"));
+    ui->actionExit->setText(tr("Exit"));
+}
+
 void MainWindow::loadNamesFromFile()
 {
     names.clear();
-    
-    // 从文件加载名单
+
     std::ifstream file("data/namelist.txt");
     if (file.is_open()) {
         std::string line;
@@ -63,12 +75,11 @@ void MainWindow::loadNamesFromFile()
         }
         file.close();
     } else {
-        // 如果文件不存在，添加一些示例名字
-        names = {"错误", "李四", "张三", "文件", "检查"};
+        names = {"Error", "Sample1", "Sample2", "Sample3", "Sample4"};
     }
-    
+
     if (names.empty()) {
-        QMessageBox::warning(this, "警告", "名单为空，请先配置名单！");
+        QMessageBox::warning(this, tr("Warning"), tr("The name list is empty. Please configure it first!"));
     }
 }
 
@@ -76,13 +87,11 @@ void MainWindow::initializeRandomizer()
 {
     randomIndices.clear();
     currentIndex = 0;
-    
-    // 创建索引
+
     for (size_t i = 0; i < names.size(); i++) {
         randomIndices.push_back(i);
     }
-    
-    // 随机打乱
+
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(randomIndices.begin(), randomIndices.end(), g);
@@ -94,7 +103,7 @@ void MainWindow::onNextButtonClicked()
         currentIndex++;
         updateUI();
     } else {
-        QMessageBox::information(this, "完成", "所有人员已点名完毕！");
+        QMessageBox::information(this, tr("Done"), tr("All people have been called!"));
     }
 }
 
@@ -128,29 +137,34 @@ void MainWindow::onOneByOneActionTriggered()
     updateUI();
 }
 
+void MainWindow::onLanguageEnglish()
+{
+    i18n::Localizer::setLanguage(i18n::Language::EN_US);
+}
+
+void MainWindow::onLanguageChinese()
+{
+    i18n::Localizer::setLanguage(i18n::Language::ZH_CN);
+}
+
 void MainWindow::updateUI()
 {
     if (names.empty() || randomIndices.empty()) {
-        ui->BrowserName->setPlainText("名单为空");
+        ui->BrowserName->setPlainText(tr("List is empty"));
         ui->progressShower->setValue(0);
         return;
     }
-    
-    // 显示当前名字
+
     if (currentIndex < randomIndices.size()) {
         QString currentName = QString::fromStdString(names[randomIndices[currentIndex]]);
         ui->BrowserName->setPlainText(currentName);
     }
-    
-    // 更新进度
+
     updateProgress();
-    
-    // 更新时间
     updateTime();
-    
-    // 更新窗口标题显示当前模式
-    QString modeText = (pickMode == 1) ? "全部覆盖的随机" : "逐个随机";
-    setWindowTitle(QString("随机人员选择器 - %1").arg(modeText));
+
+    QString modeText = (pickMode == 1) ? tr("All Random") : tr("One by One");
+    setWindowTitle(tr("Random Name Picker - %1").arg(modeText));
 }
 
 void MainWindow::updateProgress()
@@ -159,7 +173,7 @@ void MainWindow::updateProgress()
         ui->progressShower->setValue(0);
         return;
     }
-    
+
     int progress = (currentIndex + 1) * 100 / names.size();
     ui->progressShower->setValue(progress);
 }
@@ -168,6 +182,5 @@ void MainWindow::updateTime()
 {
     QDateTime currentTime = QDateTime::currentDateTime();
     QString timeString = currentTime.toString("HH:mm:ss");
-    // 可以在状态栏显示时间
-    statusBar()->showMessage(QString("当前时间: %1").arg(timeString));
+    statusBar()->showMessage(tr("Current time: %1").arg(timeString));
 }
