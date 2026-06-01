@@ -11,6 +11,10 @@
 #include <QMessageBox>
 #include <QObject>
 #include <QApplication>
+#include <QLinearGradient>
+#include <QPalette>
+#include <QBrush>
+#include <QFont>
 #include <fstream>
 #include <random>
 #include <algorithm>
@@ -27,6 +31,102 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->statusbar->addPermanentWidget(timeLabel);
+
+    setStyleSheet(R"(
+        QMainWindow {
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #667eea, stop:1 #764ba2);
+        }
+        QMenuBar {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            padding: 2px;
+            font-size: 13px;
+        }
+        QMenuBar::item:selected {
+            background: rgba(255,255,255,0.25);
+            border-radius: 4px;
+        }
+        QMenu {
+            background: #2d2d44;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 4px;
+        }
+        QMenu::item:selected {
+            background: #667eea;
+            border-radius: 4px;
+            padding: 4px 20px;
+        }
+        QLabel#titleShower {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 4px;
+        }
+        QLabel#modeLabel {
+            color: rgba(255,255,255,0.85);
+            font-size: 13px;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 12px;
+        }
+        QFrame#headerLine, QFrame#bottomLine {
+            color: rgba(255,255,255,0.2);
+        }
+        QLabel#BrowserName {
+            background: rgba(255,255,255,0.92);
+            border-radius: 16px;
+            padding: 20px;
+            color: #2d2d44;
+            font-size: 52px;
+            font-weight: 600;
+            margin: 10px 20px;
+        }
+        QPushButton#ButtonNext {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f093fb, stop:1 #f5576c);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 24px;
+        }
+        QPushButton#ButtonNext:hover {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #f5a6ff, stop:1 #f7788a);
+        }
+        QPushButton#ButtonNext:pressed {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #d07de0, stop:1 #d04a5c);
+        }
+        QProgressBar {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 10px;
+            height: 20px;
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        QProgressBar::chunk {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 #43e97b, stop:1 #38f9d7);
+            border-radius: 10px;
+        }
+        QLabel#creditLabel {
+            color: rgba(255,255,255,0.5);
+            font-size: 9px;
+        }
+        QStatusBar {
+            background: rgba(0,0,0,0.15);
+            color: rgba(255,255,255,0.8);
+            font-size: 12px;
+        }
+    )");
 
     timer = new QTimer(this);
 
@@ -140,6 +240,15 @@ void MainWindow::onAboutQt()
 
 void MainWindow::loadNamesFromFile()
 {
+    QFileInfo fileInfo(QString::fromStdString("data/namelist.txt"));
+    if (!fileInfo.exists()) {
+        showStatus(tr("Name list file not found."), 8000);
+        QMessageBox::information(this, tr("Setup Required"),
+            tr("No name list found at data/namelist.txt.\n"
+               "Please add names to start picking."));
+        return;
+    }
+
     data::NameList dataList;
     dataList.loadFromFile("data/namelist.txt");
 
@@ -150,7 +259,7 @@ void MainWindow::loadNamesFromFile()
 
     if (names.empty()) {
         showStatus(tr("Name list is empty! Please configure it first."), 8000);
-        QMessageBox::warning(this, tr("Warning"), tr("The name list is empty. Please configure it first!"));
+        QMessageBox::warning(this, tr("Warning"), tr("The name list is empty. Please add some names first!"));
     }
 }
 
@@ -164,9 +273,15 @@ void MainWindow::initializeRandomizer()
         randomIndices.push_back(i);
     }
 
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(randomIndices.begin(), randomIndices.end(), g);
+    try {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(randomIndices.begin(), randomIndices.end(), g);
+    } catch (...) {
+        std::mt19937 g(static_cast<unsigned int>(
+            std::chrono::system_clock::now().time_since_epoch().count()));
+        std::shuffle(randomIndices.begin(), randomIndices.end(), g);
+    }
 }
 
 void MainWindow::onNextButtonClicked()

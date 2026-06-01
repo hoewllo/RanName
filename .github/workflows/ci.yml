@@ -106,7 +106,6 @@ jobs:
           name: windows-mingw-packages
           path: |
             build/mingw/*.zip
-            build/mingw/bin/*.exe
           retention-days: 7
 
   build-linux-gcc:
@@ -145,7 +144,7 @@ jobs:
         run: |
           cd build/linux
           mkdir -p package/bin
-          cp bin/RandomNamePicker bin/SetupTool package/bin/
+          cp bin/RandomNamePicker package/bin/
           if [ -f bin/RandomNamePickerGUI ]; then cp bin/RandomNamePickerGUI package/bin/; fi
           tar czf RandomNamePicker-${{ env.BUILD_TYPE }}-Linux.tar.gz -C package .
 
@@ -195,7 +194,7 @@ jobs:
         run: |
           cd build/linux-arm64
           mkdir -p package/bin
-          cp bin/RandomNamePicker bin/SetupTool package/bin/
+          cp bin/RandomNamePicker package/bin/
           if [ -f bin/RandomNamePickerGUI ]; then cp bin/RandomNamePickerGUI package/bin/; fi
           tar czf RandomNamePicker-${{ env.BUILD_TYPE }}-Linux-ARM64.tar.gz -C package .
 

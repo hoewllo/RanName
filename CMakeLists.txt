@@ -75,24 +75,6 @@ set_target_properties(RandomNamePicker PROPERTIES
 
 target_include_directories(RandomNamePicker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# Setup tool (console-based configuration)
-add_executable(SetupTool
-    tools/setup/setup.cpp
-    src/utils/platform.cpp
-    src/core/name_list.cpp
-    src/core/config_manager.cpp
-    src/core/randomizer.cpp
-    src/ui/console.cpp
-    src/ui/setup_tui.cpp
-    src/ui/tui.cpp
-    src/i18n/localizer.cpp
-)
-set_target_properties(SetupTool PROPERTIES
-    OUTPUT_NAME "SetupTool"
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-)
-target_include_directories(SetupTool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
 # GUI application (requires Qt6)
 find_package(Qt6 QUIET COMPONENTS Core Widgets Gui)
 if(Qt6_FOUND)

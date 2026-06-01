@@ -2,6 +2,7 @@
 #include "main_window.h"
 #include "../core/config_manager.h"
 #include "../i18n/localizer.h"
+#include "../utils/platform.h"
 
 int main(int argc, char *argv[])
 {
@@ -10,6 +11,9 @@ int main(int argc, char *argv[])
     app.setApplicationName("RandomNamePicker");
     app.setApplicationVersion("1.0");
     app.setOrganizationName("Jianyin Li");
+
+    utils::Platform::setUTF8Encoding();
+    utils::Platform::createDirectory("data");
 
     config::ConfigManager config;
     config.loadFromFile("data/config.conf");
