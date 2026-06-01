@@ -1,115 +1,179 @@
 #include "localizer.h"
+#include <fstream>
+#include <sstream>
+#include <algorithm>
 
 namespace i18n {
 
-Language Localizer::s_lang = Language::EN_US;
+std::unordered_map<std::string, std::string> Localizer::s_translations;
+std::string Localizer::s_langCode = "en_US";
 
-static const char* enUS[] = {
-    "Random Name Picker",
-    "Configuration",
-    "Random Picking",
-    "Name: ",
-    "Remaining: ",
-    "",
-    "Invalid input, please try again.",
-    "Press Enter to continue...",
-    "The name list is empty. Please configure it first.",
-    "Continue using? ",
-    "Please wait, your ideal classroom random name picker is preparing...",
-    "Current mode: ",
-    "Name count: ",
-    "You can configure via the setup tool.",
-    "Please wait",
-    "End",
-    "Unable to open config file: ",
-    "Unable to open config file for writing: ",
-    "All Random",
-    "One by One",
-    "Unable to open name list file: ",
-    "Current list (",
-    " names):",
-    "1. Add name",
-    "2. Clear list",
-    "3. Save and return",
-    "Please choose: ",
-    "Enter name: ",
-    "List cleared.",
-    "1. Edit list (",
-    "2. Set mode (current: ",
-    "3. Save and exit",
-    "Choose mode:",
-    "1. All Random",
-    "2. One by One",
-    "Settings saved.",
-    "[Space:Next] [q:Quit] [h:Hide] [a:All] [o:One] [l:Lang]",
-    "All names picked! Press any key to exit.",
-    "List is empty! Press any key to exit.",
-    "*** Hidden ***",
+static const char* idKeys[] = {
+    "TITLE_MAIN",
+    "TITLE_CONFIG",
+    "TITLE_PICKING",
+    "NAME_LABEL",
+    "REMAINING_LABEL",
+    "PERSON_UNIT",
+    "INVALID_INPUT",
+    "PRESS_ENTER",
+    "LIST_EMPTY",
+    "CONTINUE_ASK",
+    "PREPARING",
+    "CURRENT_MODE",
+    "NAME_COUNT",
+    "SETUP_HINT",
+    "PLEASE_WAIT",
+    "END",
+    "UNABLE_OPEN_CONFIG",
+    "UNABLE_WRITE_CONFIG",
+    "MODE_ALL_RANDOM",
+    "MODE_ONE_BY_ONE",
+    "UNABLE_OPEN_LIST",
+    "CURRENT_LIST",
+    "NAMES_COUNT",
+    "ADD_NAME",
+    "CLEAR_LIST",
+    "SAVE_RETURN",
+    "PLEASE_CHOOSE",
+    "ENTER_NAME",
+    "LIST_CLEARED",
+    "EDIT_LIST",
+    "SET_MODE",
+    "SAVE_EXIT",
+    "CHOOSE_MODE",
+    "MODE_1_ALL",
+    "MODE_2_ONE",
+    "SETTINGS_SAVED",
+    "TUI_HELP",
+    "TUI_DONE",
+    "TUI_EMPTY",
+    "TUI_HIDDEN",
+    "TUI_HINT_DONE",
+    "TUI_HINT_EXIT",
+    "SETUP_HINT_LIST",
+    "SETUP_HINT_SAVE",
+    "SETUP_HINT_ADD",
+    "SETUP_LIST_EDIT",
 };
 
-static const char* zhCN[] = {
-    "随机点名程序",
-    "随机点名配置",
-    "随机点名",
-    "姓名：",
-    "剩余：",
-    "人",
-    "无效输入，请重新选择。",
-    "按回车继续...",
-    "名单为空，请先配置名单。",
-    "继续使用吗？",
-    "最后等待一下，您的理想课堂中的随机点名程序正在进行使用前的最后准备...",
-    "当前点名模式：",
-    "名单人数：",
-    "您可以通过setup.exe进行设置。",
-    "请稍后",
-    "结束",
-    "无法打开配置文件: ",
-    "无法打开配置文件进行写入: ",
-    "全局随机",
-    "逐个随机",
-    "无法打开名单文件: ",
-    "当前名单 (",
-    " 人):",
-    "1. 添加姓名",
-    "2. 清空名单",
-    "3. 保存并返回",
-    "请选择: ",
-    "请输入姓名: ",
-    "名单已清空。",
-    "1. 编辑名单 (",
-    "2. 设置模式 (当前: ",
-    "3. 保存并退出",
-    "选择模式:",
-    "1. 全部覆盖的随机",
-    "2. 逐个随机",
-    "设置已保存。",
-    "[Space:下一个] [q:退出] [h:隐藏] [a:全局随机] [o:逐个随机] [l:语言]",
-    "所有人员已点名完毕！按任意键退出。",
-    "名单为空！按任意键退出。",
-    "*** 已隐藏 ***",
-};
+std::string Localizer::idToKey(ID id) {
+    int idx = static_cast<int>(id);
+    if (idx < 0 || idx >= static_cast<int>(ID::_COUNT)) return "";
+    return idKeys[idx];
+}
 
-void Localizer::setLanguage(Language lang) {
-    s_lang = lang;
+std::string Localizer::unescapeXML(const std::string& text) {
+    std::string result = text;
+    auto replace = [&](const std::string& from, const std::string& to) {
+        size_t pos = 0;
+        while ((pos = result.find(from, pos)) != std::string::npos) {
+            result.replace(pos, from.length(), to);
+            pos += to.length();
+        }
+    };
+    replace("&amp;", "&");
+    replace("&lt;", "<");
+    replace("&gt;", ">");
+    replace("&quot;", "\"");
+    replace("&apos;", "'");
+    return result;
+}
+
+bool Localizer::loadFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) return false;
+
+    std::string content((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+    file.close();
+
+    // Find Console context
+    std::string ctxTag = "<name>Console</name>";
+    size_t ctxStart = content.find(ctxTag);
+    if (ctxStart == std::string::npos) return false;
+
+    size_t ctxOpen = content.rfind("<context", ctxStart);
+    if (ctxOpen == std::string::npos) return false;
+
+    size_t ctxClose = content.find("</context>", ctxOpen);
+    if (ctxClose == std::string::npos) return false;
+
+    std::string ctxSection = content.substr(ctxOpen, ctxClose - ctxOpen + 10);
+
+    // Parse <message> entries
+    size_t pos = 0;
+    while (true) {
+        size_t msgStart = ctxSection.find("<message>", pos);
+        if (msgStart == std::string::npos) break;
+        size_t msgEnd = ctxSection.find("</message>", msgStart);
+        if (msgEnd == std::string::npos) break;
+
+        std::string msg = ctxSection.substr(msgStart, msgEnd - msgStart + 10);
+        pos = msgEnd + 10;
+
+        // Extract <source>
+        std::string source;
+        size_t s = msg.find("<source>");
+        if (s == std::string::npos) continue;
+        s += 8;
+        size_t e = msg.find("</source>", s);
+        if (e == std::string::npos) continue;
+        source = unescapeXML(msg.substr(s, e - s));
+
+        // Extract <translation...>
+        std::string trans;
+        s = msg.find("<translation");
+        if (s == std::string::npos) continue;
+        s = msg.find('>', s) + 1;
+        e = msg.find("</translation>", s);
+        if (e == std::string::npos) continue;
+        trans = unescapeXML(msg.substr(s, e - s));
+
+        if (!source.empty()) {
+            if (!trans.empty()) {
+                s_translations[source] = trans;
+            } else if (s_translations.find(source) == s_translations.end()) {
+                s_translations[source] = source;
+            }
+        }
+    }
+
+    return true;
+}
+
+void Localizer::setLanguage(const std::string& langCode) {
+    s_langCode = langCode;
+    s_translations.clear();
+
+    loadFile("trans/RandomNamePicker_en_US.ts");
+
+    if (langCode != "en_US") {
+        std::string path = "trans/RandomNamePicker_" + langCode + ".ts";
+        loadFile(path);
+    }
 }
 
 Language Localizer::getLanguage() {
-    return s_lang;
+    return parseLanguage(s_langCode);
+}
+
+std::string Localizer::currentLanguageCode() {
+    return s_langCode;
 }
 
 std::string Localizer::get(ID id) {
-    int idx = static_cast<int>(id);
-    if (idx < 0 || idx >= static_cast<int>(ID::_COUNT)) {
-        return "";
-    }
-    switch (s_lang) {
-        case Language::ZH_CN:
-            return zhCN[idx];
-        case Language::EN_US:
-        default:
-            return enUS[idx];
-    }
+    std::string key = idToKey(id);
+    if (key.empty()) return "";
+    auto it = s_translations.find(key);
+    if (it != s_translations.end()) return it->second;
+    return key;
+}
+
+std::string Localizer::get(const std::string& key) {
+    auto it = s_translations.find(key);
+    if (it != s_translations.end()) return it->second;
+    return key;
 }
 
 Language Localizer::parseLanguage(const std::string& langStr) {

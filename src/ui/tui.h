@@ -13,6 +13,8 @@ enum class TUIAction {
     MODE_ALL,
     MODE_ONE,
     LANG,
+    RESTART,
+    SETUP,
     NONE
 };
 
@@ -29,21 +31,28 @@ public:
     TUIAction getAction();
 
 private:
+    void ansiMove(int row, int col);
+    void ansiClearLine();
+    void ansiClearScreen();
+
     void drawFrame();
     void drawHeader(const std::string& modeDesc);
-    void drawNameArea(const std::string& name, bool hideNext);
+    void drawName(const std::string& name, bool hideNext);
     void drawProgress(size_t current, size_t total);
-    void drawControls();
-    void drawTime();
-    void moveTo(int row, int col);
-    void clearLine(int row);
-    std::string centerText(const std::string& text, int width);
+    void drawStatus(const std::string& msg);
+    void drawPrompt();
+
+    TUIAction parseCommand(const std::string& cmd);
+    std::string centerText(const std::string& text, int w);
     std::string currentTimeStr();
 
     int width;
     int height;
     std::time_t lastTimeUpdate;
     std::string cachedTimeStr;
+    bool drawn;
+    std::string lastStatus;
+    int frameBottomRow;
 };
 
 }

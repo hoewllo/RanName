@@ -44,21 +44,12 @@ option(BUILD_TESTS "Build tests" OFF)
 set(CONSOLE_SOURCES
     src/main.cpp
     src/utils/platform.cpp
-    src/data/name_list.cpp
-    src/config/config_manager.cpp
+    src/core/name_list.cpp
+    src/core/config_manager.cpp
     src/core/randomizer.cpp
-    src/ui/console_ui.cpp
+    src/ui/console.cpp
     src/ui/tui.cpp
-    src/i18n/localizer.cpp
-)
-
-# Source files for setup tool
-set(SETUP_SOURCES
-    tools/setup/setup.cpp
-    src/utils/platform.cpp
-    src/data/name_list.cpp
-    src/config/config_manager.cpp
-    src/ui/console_ui.cpp
+    src/ui/setup_tui.cpp
     src/i18n/localizer.cpp
 )
 
@@ -72,7 +63,6 @@ file(GLOB_RECURSE HEADERS
 )
 
 list(LENGTH CONSOLE_SOURCES CONSOLE_COUNT)
-list(LENGTH SETUP_SOURCES SETUP_COUNT)
 list(LENGTH GUI_SOURCES GUI_COUNT)
 list(LENGTH HEADERS HEADERS_COUNT)
 
@@ -83,14 +73,24 @@ set_target_properties(RandomNamePicker PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
 
-# Setup tool
-add_executable(SetupTool ${SETUP_SOURCES})
+target_include_directories(RandomNamePicker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# Setup tool (console-based configuration)
+add_executable(SetupTool
+    tools/setup/setup.cpp
+    src/utils/platform.cpp
+    src/core/name_list.cpp
+    src/core/config_manager.cpp
+    src/core/randomizer.cpp
+    src/ui/console.cpp
+    src/ui/setup_tui.cpp
+    src/ui/tui.cpp
+    src/i18n/localizer.cpp
+)
 set_target_properties(SetupTool PROPERTIES
     OUTPUT_NAME "SetupTool"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
-
-target_include_directories(RandomNamePicker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(SetupTool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # GUI application (requires Qt6)
@@ -99,8 +99,8 @@ if(Qt6_FOUND)
     add_executable(RandomNamePickerGUI
         ${GUI_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/localizer.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/config/config_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/data/name_list.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/config_manager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/name_list.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/platform.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core/randomizer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/resources.qrc
@@ -156,7 +156,7 @@ if(Qt6_FOUND)
     endif()
 endif()
 
-install(TARGETS RandomNamePicker SetupTool
+install(TARGETS RandomNamePicker
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 if(Qt6_FOUND)
@@ -166,11 +166,18 @@ if(Qt6_FOUND)
     )
 endif()
 
-install(DIRECTORY data/ DESTINATION ${CMAKE_INSTALL_BINDIR}/data)
+if(EXISTS "${CMAKE_SOURCE_DIR}/data")
+    install(DIRECTORY data/ DESTINATION ${CMAKE_INSTALL_BINDIR}/data)
+endif()
 
 add_custom_target(create_data_dir ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/data
     COMMENT "Creating data directory"
+)
+
+add_custom_command(TARGET RandomNamePicker POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/trans ${CMAKE_BINARY_DIR}/bin/trans
+    COMMENT "Copying translation files"
 )
 
 if(BUILD_TESTS)
@@ -196,7 +203,6 @@ if(Qt6_FOUND)
 endif()
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Console sources: ${CONSOLE_COUNT}")
-message(STATUS "Setup sources: ${SETUP_COUNT}")
 message(STATUS "GUI sources: ${GUI_COUNT}")
 message(STATUS "Header files: ${HEADERS_COUNT}")
 message(STATUS "==========================================")

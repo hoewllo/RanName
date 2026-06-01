@@ -1,4 +1,4 @@
-#include "console_ui.h"
+#include "console.h"
 #include "../utils/platform.h"
 #include "../i18n/localizer.h"
 #include <iostream>

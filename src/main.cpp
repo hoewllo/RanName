@@ -1,10 +1,14 @@
 #include <iostream>
 #include <string>
-#include "config/config_manager.h"
-#include "data/name_list.h"
+#include <fstream>
+#include <algorithm>
+#include <vector>
+#include "core/config_manager.h"
+#include "core/name_list.h"
 #include "core/randomizer.h"
-#include "ui/console_ui.h"
+#include "ui/console.h"
 #include "ui/tui.h"
+#include "ui/setup_tui.h"
 #include "utils/platform.h"
 #include "i18n/localizer.h"
 
@@ -32,8 +36,7 @@ public:
         configManager.loadFromFile("data/config.conf");
 
         if (!langSet) {
-            i18n::Localizer::setLanguage(
-                i18n::Localizer::parseLanguage(configManager.getLanguage()));
+            i18n::Localizer::setLanguage(configManager.getLanguage());
         }
 
         nameList.loadFromFile("data/namelist.txt");
@@ -46,7 +49,7 @@ public:
 
     void run() {
         if (nameList.isEmpty()) {
-            tui.showEmptyScreen();
+            handleEmptyList();
             return;
         }
 
@@ -55,8 +58,8 @@ public:
 
         while (true) {
             if (!randomizer->hasNext()) {
-                tui.showDoneScreen();
-                break;
+                handleDone();
+                return;
             }
 
             size_t index = randomizer->getNextIndex();
@@ -73,7 +76,6 @@ public:
                 if (action == ui::TUIAction::NEXT) {
                     break;
                 } else if (action == ui::TUIAction::QUIT) {
-                    utils::Platform::setRawMode(false);
                     return;
                 } else if (action == ui::TUIAction::HIDE) {
                     hideNext = !hideNext;
@@ -91,19 +93,24 @@ public:
                     randomizer->initialize(nameList.getNames());
                     hideNext = false;
                     continue;
+                } else if (action == ui::TUIAction::RESTART) {
+                    setupRandomizer();
+                    hideNext = false;
+                    break;
+                } else if (action == ui::TUIAction::SETUP) {
+                    handleSetup();
+                    continue;
                 } else if (action == ui::TUIAction::LANG) {
                     i18n::Language cur = i18n::Localizer::getLanguage();
                     i18n::Language next = (cur == i18n::Language::ZH_CN)
                         ? i18n::Language::EN_US : i18n::Language::ZH_CN;
-                    i18n::Localizer::setLanguage(next);
+                    i18n::Localizer::setLanguage(i18n::Localizer::languageToString(next));
                     configManager.setLanguage(i18n::Localizer::languageToString(next));
                     configManager.saveToFile("data/config.conf");
                     utils::Platform::setUTF8Encoding();
                 }
             }
         }
-
-        utils::Platform::setRawMode(false);
     }
 
 private:
@@ -122,6 +129,98 @@ private:
         randomizer = new core::Randomizer(coreMode);
         randomizer->initialize(nameList.getNames());
     }
+
+    void handleDone() {
+        tui.showDoneScreen();
+        while (true) {
+            ui::TUIAction action = tui.getAction();
+            if (action == ui::TUIAction::QUIT) {
+                return;
+            } else if (action == ui::TUIAction::RESTART) {
+                setupRandomizer();
+                run();
+                return;
+            } else if (action == ui::TUIAction::SETUP) {
+                handleSetup();
+                setupRandomizer();
+                run();
+                return;
+            } else {
+                tui.showDoneScreen();
+            }
+        }
+    }
+
+    void handleEmptyList() {
+        handleSetup();
+        if (!nameList.isEmpty()) {
+            run();
+        }
+    }
+
+    void handleSetup() {
+        ui::SetupTUI setupUI;
+        bool done = false;
+        while (!done) {
+            setupUI.showMainScreen(configManager.getModeDescription(), nameList.getCount());
+            std::string cmd = setupUI.getCommand();
+
+            std::string lower = cmd;
+            std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+            if (lower == "exit" || lower == "quit" || lower == "q" || lower == "back" || lower == "b") {
+                done = true;
+            } else if (lower == "save") {
+                configManager.setNameCount(nameList.getCount());
+                configManager.saveToFile("data/config.conf");
+                std::ofstream file("data/namelist.txt");
+                if (file.is_open()) {
+                    for (size_t i = 0; i < nameList.getCount(); i++) {
+                        file << nameList.getNameAt(i) << std::endl;
+                    }
+                    file.close();
+                }
+                done = true;
+            } else if (lower == "list") {
+                editList(setupUI);
+            } else if (lower == "mode" || lower == "mode all" || lower == "mode_all") {
+                configManager.setMode(config::PickMode::ALL_RANDOM);
+            } else if (lower == "mode one" || lower == "mode_one" || lower == "mode one by one") {
+                configManager.setMode(config::PickMode::ONE_BY_ONE);
+            }
+        }
+
+        nameList.loadFromFile("data/namelist.txt");
+        if (configManager.getNameCount() != nameList.getCount()) {
+            configManager.setNameCount(nameList.getCount());
+            configManager.saveToFile("data/config.conf");
+        }
+    }
+
+    void editList(ui::SetupTUI& setupUI) {
+        bool done = false;
+        while (!done) {
+            std::vector<std::string> names;
+            for (size_t i = 0; i < nameList.getCount(); i++) {
+                names.push_back(nameList.getNameAt(i));
+            }
+            setupUI.showListScreen(names);
+            std::string cmd = setupUI.getCommand();
+
+            std::string lower = cmd;
+            std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+            if (lower == "back" || lower == "b" || lower == "return"
+                || lower == "exit" || lower == "q") {
+                done = true;
+            } else if (lower == "clear") {
+                nameList.clear();
+            } else if (cmd.size() > 4 && lower.substr(0, 4) == "add ") {
+                std::string name = cmd.substr(4);
+                if (!name.empty()) nameList.addName(name);
+            }
+        }
+    }
 };
 
 int main(int argc, char* argv[]) {
@@ -129,7 +228,12 @@ int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "--lang" && i + 1 < argc) {
-            i18n::Localizer::setLanguage(i18n::Localizer::parseLanguage(argv[++i]));
+            std::string langStr = argv[++i];
+            if (langStr == "zh-CN" || langStr == "zh_CN" || langStr == "zh") {
+                i18n::Localizer::setLanguage("zh_CN");
+            } else {
+                i18n::Localizer::setLanguage("en_US");
+            }
             langSetByArg = true;
         }
     }

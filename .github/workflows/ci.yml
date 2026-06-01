@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main, master ]
     tags: [ 'v*' ]
-  workflow_dispatch:
 
 env:
   BUILD_TYPE: Release
@@ -80,6 +79,9 @@ jobs:
           target: 'desktop'
           arch: 'win64_mingw'
 
+      - name: Generate Qt translation files
+        run: lrelease trans/*.ts
+
       - name: Configure CMake
         run: |
           cmake -B build/mingw -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
@@ -125,7 +127,11 @@ jobs:
             cmake \
             ninja-build \
             qt6-base-dev \
-            libqt6widgets6
+            libqt6widgets6 \
+            qt6-tools-dev
+
+      - name: Generate Qt translation files
+        run: /usr/lib/qt6/bin/lrelease trans/*.ts
 
       - name: Configure CMake
         run: |
@@ -171,7 +177,11 @@ jobs:
             cmake \
             ninja-build \
             qt6-base-dev \
-            libqt6widgets6
+            libqt6widgets6 \
+            qt6-tools-dev
+
+      - name: Generate Qt translation files
+        run: /usr/lib/qt6/bin/lrelease trans/*.ts
 
       - name: Configure CMake
         run: |
@@ -212,6 +222,9 @@ jobs:
       - name: Install dependencies
         run: |
           brew install cmake ninja qt@6
+
+      - name: Generate Qt translation files
+        run: lrelease trans/*.ts
 
       - name: Configure CMake
         run: |

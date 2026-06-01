@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QTranslator>
+#include <QLabel>
 #include <vector>
 #include <string>
 
@@ -29,6 +30,8 @@ private slots:
     void onRestartActionTriggered();
     void onLanguageEnglish();
     void onLanguageChinese();
+    void onAbout();
+    void onAboutQt();
 
 private:
     void loadNamesFromFile();
@@ -38,9 +41,11 @@ private:
     void updateTime();
     void retranslateStrings();
     void switchLanguage(const QString& langCode);
+    void showStatus(const QString& message, int timeout = 5000);
 
     Ui::mainWindow *ui;
     QTranslator* translator;
+    QLabel* timeLabel;
     std::vector<std::string> names;
     std::vector<size_t> randomIndices;
     size_t currentIndex;

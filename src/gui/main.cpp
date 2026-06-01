@@ -1,6 +1,6 @@
 #include <QApplication>
 #include "main_window.h"
-#include "../config/config_manager.h"
+#include "../core/config_manager.h"
 #include "../i18n/localizer.h"
 
 int main(int argc, char *argv[])
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    i18n::Localizer::setLanguage(i18n::Localizer::parseLanguage(langStr));
+    i18n::Localizer::setLanguage(langStr);
 
     MainWindow window;
     window.show();

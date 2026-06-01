@@ -1,5 +1,5 @@
-#ifndef CONSOLE_UI_H
-#define CONSOLE_UI_H
+#ifndef CONSOLE_H
+#define CONSOLE_H
 
 #include <string>
 

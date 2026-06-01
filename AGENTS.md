@@ -13,7 +13,8 @@
 - Workflow: `.github/workflows/ci.yml`
 - Triggers: push to `main`/`master`, or any tag matching `v*`
 - Builds: Linux (GCC), Linux ARM64, macOS (Clang), Windows (MinGW)
-- 3 targets: RandomNamePicker (console), SetupTool, RandomNamePickerGUI
+- 2 targets: RandomNamePicker (TUI + config tool merged), RandomNamePickerGUI
+- Config tool built into TUI — run `setup` command or pass `--setup` flag
 - Release: created only on tagged pushes
 
 ## Commit Conventions
@@ -22,15 +23,18 @@
 - Tag name = same as version number for releases
 
 ## Source Structure
-- `src/main.cpp` console entrypoint, `src/gui/main.cpp` GUI entrypoint
-- Headers colocated with sources in `src/`
-- `src/gui/` for Qt GUI code
-- `tools/setup/` for setup tool
-- `ui_files/` for Qt Designer .ui files
-- `VERSION` file at repo root
-- `src/i18n/localizer.h/cpp` — console i18n string tables (en-US/zh-CN)
+- `src/main.cpp` — TUI/console entrypoint
+- `src/gui/main.cpp` — GUI entrypoint
+- `src/core/` — shared business logic: `randomizer`, `name_list`, `config_manager`
+- `src/ui/` — terminal UIs: `tui` (interactive picker), `console` (menu-based, used by SetupTool), `setup_tui` (config mode UI)
+- `src/gui/` — Qt GUI code: `main_window`, `ui_main_window.h`
+- `src/i18n/` — `localizer` for console i18n string tables (en-US/zh-CN)
+- `src/utils/` — `platform` for cross-platform abstractions
+- `tools/setup/` — setup tool standalone source
+- `ui_files/` — Qt Designer .ui files
 - `trans/` — Qt `.ts`/`.qm` translation files for GUI
 - `resources.qrc` — embeds `.qm` files for the GUI target
+- `VERSION` file at repo root
 
 ## Internationalization
 - **Console apps** (RandomNamePicker, SetupTool): use `i18n::Localizer` with `--lang en-US|zh-CN` flag. Default: en-US.

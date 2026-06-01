@@ -2,6 +2,7 @@
 #define LOCALIZER_H
 
 #include <string>
+#include <unordered_map>
 
 namespace i18n {
 
@@ -46,6 +47,12 @@ enum class ID {
     TUI_DONE,
     TUI_EMPTY,
     TUI_HIDDEN,
+    TUI_HINT_DONE,
+    TUI_HINT_EXIT,
+    SETUP_HINT_LIST,
+    SETUP_HINT_SAVE,
+    SETUP_HINT_ADD,
+    SETUP_LIST_EDIT,
     _COUNT
 };
 
@@ -56,15 +63,22 @@ enum class Language {
 
 class Localizer {
 public:
-    static void setLanguage(Language lang);
+    static void setLanguage(const std::string& langCode);
     static Language getLanguage();
     static std::string get(ID id);
+    static std::string get(const std::string& key);
 
     static Language parseLanguage(const std::string& langStr);
     static std::string languageToString(Language lang);
+    static std::string currentLanguageCode();
 
 private:
-    static Language s_lang;
+    static std::string idToKey(ID id);
+    static bool loadFile(const std::string& path);
+    static std::string unescapeXML(const std::string& text);
+
+    static std::unordered_map<std::string, std::string> s_translations;
+    static std::string s_langCode;
 };
 
 }

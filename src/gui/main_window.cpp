@@ -1,7 +1,7 @@
 #include "main_window.h"
 #include "ui_main_window.h"
-#include "../config/config_manager.h"
-#include "../data/name_list.h"
+#include "../core/config_manager.h"
+#include "../core/name_list.h"
 #include "../core/randomizer.h"
 #include "../i18n/localizer.h"
 #include <QFile>
@@ -19,12 +19,14 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::mainWindow),
     translator(new QTranslator(this)),
+    timeLabel(new QLabel(this)),
     currentIndex(0),
     hideNextPerson(false),
     allDone(false),
     pickMode(1)
 {
     ui->setupUi(this);
+    ui->statusbar->addPermanentWidget(timeLabel);
 
     timer = new QTimer(this);
 
@@ -37,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->action_restart, &QAction::triggered, this, &MainWindow::onRestartActionTriggered);
     QObject::connect(ui->action_lang_en, &QAction::triggered, this, &MainWindow::onLanguageEnglish);
     QObject::connect(ui->action_lang_zh, &QAction::triggered, this, &MainWindow::onLanguageChinese);
+    QObject::connect(ui->action_about, &QAction::triggered, this, &MainWindow::onAbout);
+    QObject::connect(ui->action_about_qt, &QAction::triggered, this, &MainWindow::onAboutQt);
 
     retranslateStrings();
 
@@ -55,14 +59,16 @@ MainWindow::~MainWindow()
 
 void MainWindow::retranslateStrings()
 {
-    ui->titleShower->setMarkdown(tr("Random Name Picker"));
+    ui->titleShower->setText(tr("Random Name Picker"));
     ui->ButtonNext->setText(tr("Next"));
-    ui->textBrowser->setMarkdown(tr("Jianyin Li, Powered by Qt Framework"));
-    setWindowTitle(tr("Random Name Picker - Main Window"));
+    ui->creditLabel->setText(tr("Jianyin Li, Powered by Qt Framework"));
 
-    ui->menu->setTitle(tr("Random Name Picker"));
-    ui->menu_chmode->setTitle(tr("Change Mode"));
+    ui->menu_file->setTitle(tr("File"));
+    ui->menu_mode->setTitle(tr("Mode"));
+    ui->menu_view->setTitle(tr("View"));
     ui->menu_lang->setTitle(tr("Language"));
+    ui->menu_about->setTitle(tr("About"));
+
     ui->action_hidenp->setText(tr("Hide Next Person"));
     ui->action_m_all->setText(tr("All Random"));
     ui->action_per->setText(tr("One by One"));
@@ -70,6 +76,13 @@ void MainWindow::retranslateStrings()
     ui->actionExit->setText(tr("Exit"));
     ui->action_lang_en->setText(tr("English"));
     ui->action_lang_zh->setText(tr("中文"));
+    ui->action_about->setText(tr("About RandomNamePicker"));
+    ui->action_about_qt->setText(tr("About Qt"));
+}
+
+void MainWindow::showStatus(const QString& message, int timeout)
+{
+    ui->statusbar->showMessage(message, timeout);
 }
 
 void MainWindow::switchLanguage(const QString& langCode)
@@ -83,8 +96,7 @@ void MainWindow::switchLanguage(const QString& langCode)
         qApp->installTranslator(translator);
     }
 
-    i18n::Language lang = i18n::Localizer::parseLanguage(langCode.toStdString());
-    i18n::Localizer::setLanguage(lang);
+    i18n::Localizer::setLanguage(langCode.toStdString());
 
     ui->retranslateUi(this);
     retranslateStrings();
@@ -92,8 +104,12 @@ void MainWindow::switchLanguage(const QString& langCode)
 
     config::ConfigManager cfg;
     cfg.loadFromFile("data/config.conf");
-    cfg.setLanguage(i18n::Localizer::languageToString(lang));
+    cfg.setLanguage(langCode.toStdString());
     cfg.saveToFile("data/config.conf");
+
+    QString langName = (langCode == "zh_CN")
+        ? QString::fromUtf8("中文") : QString("English");
+    showStatus(tr("Language switched to %1").arg(langName));
 }
 
 void MainWindow::onLanguageEnglish()
@@ -104,6 +120,22 @@ void MainWindow::onLanguageEnglish()
 void MainWindow::onLanguageChinese()
 {
     switchLanguage("zh_CN");
+}
+
+void MainWindow::onAbout()
+{
+    QMessageBox::about(this, tr("About RandomNamePicker"),
+        tr("<h3>RandomNamePicker %1</h3>"
+           "<p>A random name picker for classrooms.</p>"
+           "<p>Copyright &copy; 2025 Jianyin Li</p>"
+           "<p>Built with Qt %2</p>")
+        .arg(QApplication::applicationVersion())
+        .arg(QT_VERSION_STR));
+}
+
+void MainWindow::onAboutQt()
+{
+    QMessageBox::aboutQt(this);
 }
 
 void MainWindow::loadNamesFromFile()
@@ -117,6 +149,7 @@ void MainWindow::loadNamesFromFile()
     }
 
     if (names.empty()) {
+        showStatus(tr("Name list is empty! Please configure it first."), 8000);
         QMessageBox::warning(this, tr("Warning"), tr("The name list is empty. Please configure it first!"));
     }
 }
@@ -146,6 +179,7 @@ void MainWindow::onNextButtonClicked()
     if (currentIndex < names.size() - 1) {
         currentIndex++;
         updateUI();
+        showStatus(tr("Progress: %1/%2").arg(currentIndex + 1).arg(names.size()));
     } else {
         allDone = true;
         updateUI();
@@ -166,6 +200,7 @@ void MainWindow::onHideNextActionTriggered()
 {
     hideNextPerson = !hideNextPerson;
     updateUI();
+    showStatus(hideNextPerson ? tr("Next person hidden") : tr("Next person visible"));
 }
 
 void MainWindow::onAllRandomActionTriggered()
@@ -173,6 +208,7 @@ void MainWindow::onAllRandomActionTriggered()
     pickMode = 1;
     initializeRandomizer();
     updateUI();
+    showStatus(tr("Mode changed to All Random"));
 }
 
 void MainWindow::onOneByOneActionTriggered()
@@ -180,39 +216,42 @@ void MainWindow::onOneByOneActionTriggered()
     pickMode = 2;
     initializeRandomizer();
     updateUI();
+    showStatus(tr("Mode changed to One by One"));
 }
 
 void MainWindow::onRestartActionTriggered()
 {
     initializeRandomizer();
     updateUI();
+    showStatus(tr("Restarted"));
 }
 
 void MainWindow::updateUI()
 {
+    QString modeText = (pickMode == 1) ? tr("All Random") : tr("One by One");
+    ui->modeLabel->setText(modeText);
+    setWindowTitle(tr("Random Name Picker - %1").arg(modeText));
+
     if (names.empty() || randomIndices.empty()) {
-        ui->BrowserName->setPlainText(tr("List is empty"));
+        ui->BrowserName->setText(tr("List is empty"));
         ui->progressShower->setValue(0);
         return;
     }
 
     if (allDone) {
-        ui->BrowserName->setPlainText(tr("All done! Click Next to restart."));
+        ui->BrowserName->setText(tr("All done! Click Next to restart."));
         ui->progressShower->setValue(100);
     } else if (currentIndex < randomIndices.size()) {
         if (hideNextPerson) {
-            ui->BrowserName->setPlainText(tr("*** Hidden ***"));
+            ui->BrowserName->setText(tr("*** Hidden ***"));
         } else {
             QString currentName = QString::fromStdString(names[randomIndices[currentIndex]]);
-            ui->BrowserName->setPlainText(currentName);
+            ui->BrowserName->setText(currentName);
         }
     }
 
     updateProgress();
     updateTime();
-
-    QString modeText = (pickMode == 1) ? tr("All Random") : tr("One by One");
-    setWindowTitle(tr("Random Name Picker - %1").arg(modeText));
 }
 
 void MainWindow::updateProgress()
@@ -231,5 +270,5 @@ void MainWindow::updateTime()
 {
     QDateTime currentTime = QDateTime::currentDateTime();
     QString timeString = currentTime.toString("HH:mm:ss");
-    statusBar()->showMessage(tr("Current time: %1").arg(timeString));
+    timeLabel->setText(tr("Current time: %1").arg(timeString));
 }
