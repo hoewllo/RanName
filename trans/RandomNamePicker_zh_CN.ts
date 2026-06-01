@@ -67,11 +67,23 @@
         <source>Random Name Picker - %1</source>
         <translation>随机人员选择器 - %1</translation>
     </message>
+    <message>
+        <source>All done! Click Next to restart.</source>
+        <translation>全部完成！点击下一个重新开始。</translation>
+    </message>
+    <message>
+        <source>*** Hidden ***</source>
+        <translation>*** 已隐藏 ***</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>重新开始</translation>
+    </message>
 </context>
 <context>
     <name>mainWindow</name>
     <message>
-        <source>随机人员选择器 - 主窗口</source>
+        <source>Random Name Picker - Main Window</source>
         <translation>随机人员选择器 - 主窗口</translation>
     </message>
     <message>
@@ -79,16 +91,20 @@
         <translation>Exit</translation>
     </message>
     <message>
-        <source>隐藏下一位</source>
+        <source>Hide Next Person</source>
         <translation>隐藏下一位</translation>
     </message>
     <message>
-        <source>全部覆盖的随机</source>
+        <source>All Random</source>
         <translation>全部覆盖的随机</translation>
     </message>
     <message>
-        <source>逐个随机</source>
+        <source>One by One</source>
         <translation>逐个随机</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>重新开始</translation>
     </message>
 </context>
 </TS>

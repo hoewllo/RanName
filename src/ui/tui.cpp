@@ -224,6 +224,9 @@ TUIAction TUI::getAction() {
         case 'o':
         case 'O':
             return TUIAction::MODE_ONE;
+        case 'l':
+        case 'L':
+            return TUIAction::LANG;
         default:
             return TUIAction::NONE;
     }

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>随机人员选择器 - 主窗口</string>
+   <string>Random Name Picker - Main Window</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTextBrowser" name="titleShower">
@@ -29,7 +29,7 @@
      </font>
     </property>
     <property name="markdown">
-     <string>随机人员选择器
+     <string>Random Name Picker
 
 </string>
     </property>
@@ -77,7 +77,7 @@
      </font>
     </property>
     <property name="text">
-     <string>下一个</string>
+     <string>Next</string>
     </property>
    </widget>
    <widget class="QTextBrowser" name="textBrowser">
@@ -95,7 +95,7 @@
      </font>
     </property>
     <property name="markdown">
-     <string>Jianyin Li,使用  Qt 框架
+     <string>Jianyin Li, Powered by Qt Framework
 
 </string>
     </property>
@@ -117,11 +117,11 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>随机人员选择器</string>
+     <string>Random Name Picker</string>
     </property>
     <widget class="QMenu" name="menu_chmode">
      <property name="title">
-      <string>更改模式</string>
+      <string>Change Mode</string>
      </property>
      <addaction name="action_m_all"/>
      <addaction name="action_per"/>
@@ -142,17 +142,17 @@
   </action>
   <action name="action_hidenp">
    <property name="text">
-    <string>隐藏下一位</string>
+    <string>Hide Next Person</string>
    </property>
   </action>
   <action name="action_m_all">
    <property name="text">
-    <string>全部覆盖的随机</string>
+    <string>All Random</string>
    </property>
   </action>
   <action name="action_per">
    <property name="text">
-    <string>逐个随机</string>
+    <string>One by One</string>
    </property>
   </action>
  </widget>

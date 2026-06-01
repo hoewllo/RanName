@@ -67,5 +67,17 @@
         <source>Random Name Picker - %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>All done! Click Next to restart.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>*** Hidden ***</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>

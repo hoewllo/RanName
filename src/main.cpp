@@ -91,6 +91,14 @@ public:
                     randomizer->initialize(nameList.getNames());
                     hideNext = false;
                     continue;
+                } else if (action == ui::TUIAction::LANG) {
+                    i18n::Language cur = i18n::Localizer::getLanguage();
+                    i18n::Language next = (cur == i18n::Language::ZH_CN)
+                        ? i18n::Language::EN_US : i18n::Language::ZH_CN;
+                    i18n::Localizer::setLanguage(next);
+                    configManager.setLanguage(i18n::Localizer::languageToString(next));
+                    configManager.saveToFile("data/config.conf");
+                    utils::Platform::setUTF8Encoding();
                 }
             }
         }

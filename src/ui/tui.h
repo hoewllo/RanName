@@ -12,6 +12,7 @@ enum class TUIAction {
     HIDE,
     MODE_ALL,
     MODE_ONE,
+    LANG,
     NONE
 };
 

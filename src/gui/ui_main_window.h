@@ -27,11 +27,15 @@ public:
     QMenuBar *menubar;
     QMenu *menu;
     QMenu *menu_chmode;
+    QMenu *menu_lang;
     QStatusBar *statusbar;
     QAction *actionExit;
     QAction *action_hidenp;
     QAction *action_m_all;
     QAction *action_per;
+    QAction *action_restart;
+    QAction *action_lang_en;
+    QAction *action_lang_zh;
 
     void setupUi(QMainWindow *mainWindow)
     {
@@ -51,6 +55,15 @@ public:
         
         action_per = new QAction(mainWindow);
         action_per->setObjectName(QString::fromUtf8("action_per"));
+
+        action_restart = new QAction(mainWindow);
+        action_restart->setObjectName(QString::fromUtf8("action_restart"));
+
+        action_lang_en = new QAction(mainWindow);
+        action_lang_en->setObjectName(QString::fromUtf8("action_lang_en"));
+
+        action_lang_zh = new QAction(mainWindow);
+        action_lang_zh->setObjectName(QString::fromUtf8("action_lang_zh"));
         
         centralwidget = new QWidget(mainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
@@ -60,7 +73,7 @@ public:
         QFont font1;
         font1.setPointSize(12);
         titleShower->setFont(font1);
-        titleShower->setMarkdown(QString::fromUtf8("随机人员选择器\n\n"));
+        titleShower->setMarkdown(QString::fromUtf8("Random Name Picker\n\n"));
         progressShower = new QProgressBar(centralwidget);
         progressShower->setObjectName(QString::fromUtf8("progressShower"));
         progressShower->setGeometry(QRect(20, 330, 311, 23));
@@ -77,24 +90,29 @@ public:
         QFont font3;
         font3.setPointSize(20);
         ButtonNext->setFont(font3);
-        ButtonNext->setText(QString::fromUtf8("下一个"));
+        ButtonNext->setText(QString::fromUtf8("Next"));
         textBrowser = new QTextBrowser(centralwidget);
         textBrowser->setObjectName(QString::fromUtf8("textBrowser"));
         textBrowser->setGeometry(QRect(40, 380, 71, 16));
         QFont font4;
         font4.setPointSize(1);
         textBrowser->setFont(font4);
-        textBrowser->setMarkdown(QString::fromUtf8("Jianyin Li,使用  Qt 框架\n\n"));
+        textBrowser->setMarkdown(QString::fromUtf8("Jianyin Li, Powered by Qt Framework\n\n"));
         mainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(mainWindow);
         menubar->setObjectName(QString::fromUtf8("menubar"));
         menubar->setGeometry(QRect(0, 0, 728, 22));
         menu = new QMenu(menubar);
         menu->setObjectName(QString::fromUtf8("menu"));
-        menu->setTitle(QString::fromUtf8("随机人员选择器"));
+        menu->setTitle(QString::fromUtf8("Random Name Picker"));
         menu_chmode = new QMenu(menu);
         menu_chmode->setObjectName(QString::fromUtf8("menu_chmode"));
-        menu_chmode->setTitle(QString::fromUtf8("更改模式"));
+        menu_chmode->setTitle(QString::fromUtf8("Change Mode"));
+
+        menu_lang = new QMenu(menu);
+        menu_lang->setObjectName(QString::fromUtf8("menu_lang"));
+        menu_lang->setTitle(QString::fromUtf8("Language"));
+
         mainWindow->setMenuBar(menubar);
         statusbar = new QStatusBar(mainWindow);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
@@ -106,6 +124,12 @@ public:
         menu->addAction(action_hidenp);
         menu->addSeparator();
         menu->addAction(menu_chmode->menuAction());
+        menu->addSeparator();
+        menu->addAction(action_restart);
+        menu->addSeparator();
+        menu->addAction(menu_lang->menuAction());
+        menu_lang->addAction(action_lang_en);
+        menu_lang->addAction(action_lang_zh);
         menu_chmode->addAction(action_m_all);
         menu_chmode->addAction(action_per);
 
@@ -116,11 +140,15 @@ public:
 
     void retranslateUi(QMainWindow *mainWindow)
     {
-        mainWindow->setWindowTitle(QCoreApplication::translate("mainWindow", "随机人员选择器 - 主窗口", nullptr));
+        mainWindow->setWindowTitle(QCoreApplication::translate("mainWindow", "Random Name Picker - Main Window", nullptr));
         actionExit->setText(QCoreApplication::translate("mainWindow", "Exit", nullptr));
-        action_hidenp->setText(QCoreApplication::translate("mainWindow", "隐藏下一位", nullptr));
-        action_m_all->setText(QCoreApplication::translate("mainWindow", "全部覆盖的随机", nullptr));
-        action_per->setText(QCoreApplication::translate("mainWindow", "逐个随机", nullptr));
+        action_hidenp->setText(QCoreApplication::translate("mainWindow", "Hide Next Person", nullptr));
+        action_m_all->setText(QCoreApplication::translate("mainWindow", "All Random", nullptr));
+        action_per->setText(QCoreApplication::translate("mainWindow", "One by One", nullptr));
+        action_restart->setText(QCoreApplication::translate("mainWindow", "Restart", nullptr));
+        menu_lang->setTitle(QCoreApplication::translate("mainWindow", "Language", nullptr));
+        action_lang_en->setText(QCoreApplication::translate("mainWindow", "English", nullptr));
+        action_lang_zh->setText(QCoreApplication::translate("mainWindow", "中文", nullptr));
     } // retranslateUi
 
 };

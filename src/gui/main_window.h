@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QTranslator>
 #include <vector>
 #include <string>
 
@@ -25,6 +26,7 @@ private slots:
     void onHideNextActionTriggered();
     void onAllRandomActionTriggered();
     void onOneByOneActionTriggered();
+    void onRestartActionTriggered();
     void onLanguageEnglish();
     void onLanguageChinese();
 
@@ -35,12 +37,15 @@ private:
     void updateProgress();
     void updateTime();
     void retranslateStrings();
+    void switchLanguage(const QString& langCode);
 
     Ui::mainWindow *ui;
+    QTranslator* translator;
     std::vector<std::string> names;
     std::vector<size_t> randomIndices;
     size_t currentIndex;
     bool hideNextPerson;
+    bool allDone;
     int pickMode;
     QTimer *timer;
 };

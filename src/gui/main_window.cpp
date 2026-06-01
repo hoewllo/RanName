@@ -5,10 +5,12 @@
 #include "../core/randomizer.h"
 #include "../i18n/localizer.h"
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include <QDateTime>
 #include <QMessageBox>
 #include <QObject>
+#include <QApplication>
 #include <fstream>
 #include <random>
 #include <algorithm>
@@ -16,8 +18,10 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::mainWindow),
+    translator(new QTranslator(this)),
     currentIndex(0),
     hideNextPerson(false),
+    allDone(false),
     pickMode(1)
 {
     ui->setupUi(this);
@@ -30,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->action_hidenp, &QAction::triggered, this, &MainWindow::onHideNextActionTriggered);
     QObject::connect(ui->action_m_all, &QAction::triggered, this, &MainWindow::onAllRandomActionTriggered);
     QObject::connect(ui->action_per, &QAction::triggered, this, &MainWindow::onOneByOneActionTriggered);
+    QObject::connect(ui->action_restart, &QAction::triggered, this, &MainWindow::onRestartActionTriggered);
+    QObject::connect(ui->action_lang_en, &QAction::triggered, this, &MainWindow::onLanguageEnglish);
+    QObject::connect(ui->action_lang_zh, &QAction::triggered, this, &MainWindow::onLanguageChinese);
 
     retranslateStrings();
 
@@ -55,27 +62,58 @@ void MainWindow::retranslateStrings()
 
     ui->menu->setTitle(tr("Random Name Picker"));
     ui->menu_chmode->setTitle(tr("Change Mode"));
+    ui->menu_lang->setTitle(tr("Language"));
     ui->action_hidenp->setText(tr("Hide Next Person"));
     ui->action_m_all->setText(tr("All Random"));
     ui->action_per->setText(tr("One by One"));
+    ui->action_restart->setText(tr("Restart"));
     ui->actionExit->setText(tr("Exit"));
+    ui->action_lang_en->setText(tr("English"));
+    ui->action_lang_zh->setText(tr("中文"));
+}
+
+void MainWindow::switchLanguage(const QString& langCode)
+{
+    QString qmPath = QString(":/i18n/RandomNamePicker_%1.qm").arg(langCode);
+    QFileInfo qmInfo(qmPath);
+
+    qApp->removeTranslator(translator);
+
+    if (qmInfo.exists() && translator->load(qmPath)) {
+        qApp->installTranslator(translator);
+    }
+
+    i18n::Language lang = i18n::Localizer::parseLanguage(langCode.toStdString());
+    i18n::Localizer::setLanguage(lang);
+
+    ui->retranslateUi(this);
+    retranslateStrings();
+    updateUI();
+
+    config::ConfigManager cfg;
+    cfg.loadFromFile("data/config.conf");
+    cfg.setLanguage(i18n::Localizer::languageToString(lang));
+    cfg.saveToFile("data/config.conf");
+}
+
+void MainWindow::onLanguageEnglish()
+{
+    switchLanguage("en_US");
+}
+
+void MainWindow::onLanguageChinese()
+{
+    switchLanguage("zh_CN");
 }
 
 void MainWindow::loadNamesFromFile()
 {
-    names.clear();
+    data::NameList dataList;
+    dataList.loadFromFile("data/namelist.txt");
 
-    std::ifstream file("data/namelist.txt");
-    if (file.is_open()) {
-        std::string line;
-        while (std::getline(file, line)) {
-            if (!line.empty()) {
-                names.push_back(line);
-            }
-        }
-        file.close();
-    } else {
-        names = {"Error", "Sample1", "Sample2", "Sample3", "Sample4"};
+    names.clear();
+    for (size_t i = 0; i < dataList.getCount(); i++) {
+        names.push_back(dataList.getNameAt(i));
     }
 
     if (names.empty()) {
@@ -87,6 +125,7 @@ void MainWindow::initializeRandomizer()
 {
     randomIndices.clear();
     currentIndex = 0;
+    allDone = false;
 
     for (size_t i = 0; i < names.size(); i++) {
         randomIndices.push_back(i);
@@ -99,11 +138,17 @@ void MainWindow::initializeRandomizer()
 
 void MainWindow::onNextButtonClicked()
 {
+    if (allDone) {
+        onRestartActionTriggered();
+        return;
+    }
+
     if (currentIndex < names.size() - 1) {
         currentIndex++;
         updateUI();
     } else {
-        QMessageBox::information(this, tr("Done"), tr("All people have been called!"));
+        allDone = true;
+        updateUI();
     }
 }
 
@@ -137,14 +182,10 @@ void MainWindow::onOneByOneActionTriggered()
     updateUI();
 }
 
-void MainWindow::onLanguageEnglish()
+void MainWindow::onRestartActionTriggered()
 {
-    i18n::Localizer::setLanguage(i18n::Language::EN_US);
-}
-
-void MainWindow::onLanguageChinese()
-{
-    i18n::Localizer::setLanguage(i18n::Language::ZH_CN);
+    initializeRandomizer();
+    updateUI();
 }
 
 void MainWindow::updateUI()
@@ -155,9 +196,16 @@ void MainWindow::updateUI()
         return;
     }
 
-    if (currentIndex < randomIndices.size()) {
-        QString currentName = QString::fromStdString(names[randomIndices[currentIndex]]);
-        ui->BrowserName->setPlainText(currentName);
+    if (allDone) {
+        ui->BrowserName->setPlainText(tr("All done! Click Next to restart."));
+        ui->progressShower->setValue(100);
+    } else if (currentIndex < randomIndices.size()) {
+        if (hideNextPerson) {
+            ui->BrowserName->setPlainText(tr("*** Hidden ***"));
+        } else {
+            QString currentName = QString::fromStdString(names[randomIndices[currentIndex]]);
+            ui->BrowserName->setPlainText(currentName);
+        }
     }
 
     updateProgress();
@@ -175,6 +223,7 @@ void MainWindow::updateProgress()
     }
 
     int progress = (currentIndex + 1) * 100 / names.size();
+    if (progress > 100) progress = 100;
     ui->progressShower->setValue(progress);
 }
 
