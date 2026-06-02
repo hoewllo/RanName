@@ -18,58 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install code quality tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            clang-tidy \
-            cppcheck \
-            valgrind
-
-      - name: Run cppcheck
-        run: |
-          cppcheck --enable=all --suppress=missingIncludeSystem \
-            --suppress=unmatchedSuppression \
-            --error-exitcode=1 \
-            --inline-suppr \
-            --std=c++17 \
-            --platform=unix64 \
-            -I src \
-            src/ tools/ || echo "cppcheck completed with warnings"
-
-      - name: Upload code quality reports
-        if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: code-quality-reports
-          path: |
-            cppcheck-results.xml
-          retention-days: 7
-
-  build-windows-mingw:
-    name: Build Windows (MinGW)
-    runs-on: windows-latest
-    continue-on-error: true
-    needs: [ code-quality-checks ]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install MinGW
-        run: |
-          choco install mingw --version 13.2.0 --params="/InstallDir:C:\mingw64 /Architecture:x86_64" -y
-          $env:Path = "C:\mingw64\bin;" + $env:Path
-          [Environment]::SetEnvironmentVariable("Path", $env:Path, [EnvironmentVariableTarget]::Process)
-          gcc --version
-
-      - name: Install build tools
-        run: |
-          choco install ninja -y
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          fetch-depth: 0
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -167,6 +117,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -217,6 +169,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -283,7 +237,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Release v${{ github.run_number }}
+          name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           files: |

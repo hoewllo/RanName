@@ -1,43 +1,52 @@
 # AGENTS.md - RandomNamePicker
 
-## Building
+## Build & Versioning
 - `cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release` then `cmake --build build`
 - Output binaries at `build/bin/`
-- GUI target requires Qt6 (optional for console apps)
+- GUI target requires Qt6 (optional). On Ubuntu: `apt install qt6-base-dev qt6-tools-dev`
+- Version auto-detected from git: tag `vX.Y.Z` → `X.Y.Z`, else commit msg `X.Y.Z`, else `git log`, else `0.0.0`
+- `VERSION` file removed — never create one
 
 ## Code Quality
 - Format: `clang-format -i src/*.cpp src/**/*.cpp src/**/*.h`
 - Cppcheck: `cppcheck --std=c++17 -I src src/`
 
-## CI/CD
-- Workflow: `.github/workflows/ci.yml`
+## CI/CD (`.github/workflows/ci.yml`)
 - Triggers: push to `main`/`master`, or any tag matching `v*`
-- Builds: Linux (GCC), Linux ARM64, macOS (Clang), Windows (MinGW)
-- 2 targets: RandomNamePicker (TUI + config tool merged), RandomNamePickerGUI
-- Config tool built into TUI — run `setup` command or pass `--setup` flag
-- Release: created only on tagged pushes
+- Platforms: Linux (GCC), Linux ARM64, macOS (Clang), Windows (MinGW)
+- All checkout steps use `fetch-depth: 0` (needed for version auto-detection from tags)
+- `.qm` files not tracked in git; CI regenerates with `lrelease trans/*.ts`
+- On Linux: `lrelease` at `/usr/lib/qt6/bin/lrelease` (not in PATH)
+- Qt6 packages: `qt6-base-dev` + `qt6-tools-dev` (Ubuntu)
+- 2 targets: RandomNamePicker (TUI), RandomNamePickerGUI
+- Release created only on tagged pushes (`softprops/action-gh-release`)
 
 ## Commit Conventions
-- Release: bare version number (e.g. `2.1.0`)
-- Feature/fix: descriptive imperative sentence
-- Tag name = same as version number for releases
-
-## Source Structure
-- `src/main.cpp` — TUI/console entrypoint
-- `src/gui/main.cpp` — GUI entrypoint
-- `src/core/` — shared business logic: `randomizer`, `name_list`, `config_manager`
-- `src/ui/` — terminal UIs: `tui` (interactive picker), `console` (menu-based, used by SetupTool), `setup_tui` (config mode UI)
-- `src/gui/` — Qt GUI code: `main_window`, `ui_main_window.h`
-- `src/i18n/` — `localizer` for console i18n string tables (en-US/zh-CN)
-- `src/utils/` — `platform` for cross-platform abstractions
-- `tools/setup/` — setup tool standalone source
-- `ui_files/` — Qt Designer .ui files
-- `trans/` — Qt `.ts`/`.qm` translation files for GUI
-- `resources.qrc` — embeds `.qm` files for the GUI target
-- `VERSION` file at repo root
+- Bare version number (e.g. `2.0.1`) — no `v` prefix, no descriptions
+- Tag name = `v` + version (e.g. `v2.0.1`)
+- Tags and releases are **never** pushed unless explicitly asked
 
 ## Internationalization
-- **Console apps** (RandomNamePicker, SetupTool): use `i18n::Localizer` with `--lang en-US|zh-CN` flag. Default: en-US.
-- **GUI app** (RandomNamePickerGUI): uses Qt `tr()` / `.ts` / `.qm`. Loads language from `data/config.conf` or `--lang` flag.
-- Config file stores language as `[language]= en_US` or `[language]= zh_CN`.
-- To update translations: edit `.ts` files in `trans/`, then run `lrelease trans/*.ts` to regenerate `.qm`.
+- **Console/TUI**: uses `i18n::Localizer` with `--lang en-US|zh-CN` flag. Default: en-US
+- **GUI**: uses Qt `tr()` / `.ts` / `.qm`. Language from `data/config.conf` or `--lang` flag
+- Config stores language as `[language]= en_US` or `zh_CN`
+- To update: edit `.ts` in `trans/`, run `lrelease trans/*.ts` to regenerate `.qm`
+
+## Source Structure
+- `src/main.cpp` — TUI entrypoint
+- `src/gui/main.cpp` — GUI entrypoint
+- `src/core/` — shared: `randomizer`, `name_list`, `config_manager`
+- `src/ui/` — TUI screens: `tui` (interactive picker), `console` (menu), `setup_tui` (config)
+- `src/gui/` — Qt GUI: `main_window` (+ auto-generated `ui_main_window.h` from `.ui`)
+- `src/i18n/` — `localizer` (console i18n string tables)
+- `src/utils/` — `platform` (cross-platform: UTF-8, directory creation)
+- `ui_files/` — Qt Designer `.ui` files
+- `trans/` — `.ts`/`.qm` translation files
+- `tools/setup/` — orphaned source (not built; config merged into TUI)
+
+## Key Architecture Details
+- `data/config.conf` and `data/namelist.txt` created at runtime (not tracked in git)
+- `Randomizer::peekNextIndex()` added for "Hide Next" preview feature
+- Hide Next hides the **next** name (Small2 preview), not the current name (Large)
+- SetupTool removed as standalone binary — config accessible via `setup`/`s` command or `--setup` flag in TUI
+- No tests exist (`BUILD_TESTS=OFF`); no test framework configured

@@ -5,7 +5,45 @@ if(NOT DEFINED PROJECT_NAME)
 endif()
 
 if(NOT DEFINED PROJECT_VERSION)
-    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROJECT_VERSION)
+    # Auto-detect version from git: tag vX.Y.Z → X.Y.Z, else commit msg X.Y.Z, else git log, else 0.0.0
+    set(PROJECT_VERSION "0.0.0")
+    find_package(Git QUIET)
+    if(Git_FOUND)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --tags --match "v*" --abbrev=0
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_TAG
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+            RESULT_VARIABLE GIT_TAG_RESULT
+        )
+        if(GIT_TAG_RESULT EQUAL 0 AND GIT_TAG MATCHES "^v([0-9]+\\.[0-9]+\\.[0-9]+)$")
+            set(PROJECT_VERSION "${CMAKE_MATCH_1}")
+        else()
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} log -1 --format=%s
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                OUTPUT_VARIABLE HEAD_MSG
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+            if(HEAD_MSG MATCHES "^([0-9]+\\.[0-9]+\\.[0-9]+)$")
+                set(PROJECT_VERSION "${CMAKE_MATCH_1}")
+            else()
+                execute_process(
+                    COMMAND ${GIT_EXECUTABLE} log --first-parent --format=%s -100
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    OUTPUT_VARIABLE COMMIT_MSGS
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    ERROR_QUIET
+                )
+                string(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+)" PROJECT_VERSION "${COMMIT_MSGS}")
+                if(NOT PROJECT_VERSION)
+                    set(PROJECT_VERSION "0.0.0")
+                endif()
+            endif()
+        endif()
+    endif()
     set(PROJECT_VERSION "${PROJECT_VERSION}" CACHE STRING "Project version")
 endif()
 
