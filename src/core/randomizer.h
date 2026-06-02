@@ -20,6 +20,7 @@ namespace core {
         Randomizer(RandomMode mode);
         void initialize(const std::vector<std::string>& names);
         size_t getNextIndex();
+        size_t peekNextIndex() const;
         bool hasNext() const;
         void reset();
         size_t getRemainingCount() const;

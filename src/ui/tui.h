@@ -24,7 +24,8 @@ public:
     ~TUI();
 
     void showPickScreen(const std::string& name, size_t current, size_t total,
-                        const std::string& modeDesc, bool hideNext);
+                        const std::string& modeDesc,
+                        const std::string& nextName, bool hideNext);
     void showDoneScreen();
     void showEmptyScreen();
 
@@ -37,7 +38,8 @@ private:
 
     void drawFrame();
     void drawHeader(const std::string& modeDesc);
-    void drawName(const std::string& name, bool hideNext);
+    void drawName(const std::string& name);
+    void drawNextPreview(const std::string& nextName, bool hideNext);
     void drawProgress(size_t current, size_t total);
     void drawStatus(const std::string& msg);
     void drawPrompt();

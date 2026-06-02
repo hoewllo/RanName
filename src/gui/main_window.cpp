@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::mainWindow),
     translator(new QTranslator(this)),
     timeLabel(new QLabel(this)),
+    nextPreviewLabel(new QLabel(this)),
     currentIndex(0),
     hideNextPerson(false),
     allDone(false),
@@ -31,6 +32,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->statusbar->addPermanentWidget(timeLabel);
+
+    nextPreviewLabel->setAlignment(Qt::AlignCenter);
+    nextPreviewLabel->setStyleSheet("color: rgba(255,255,255,0.7); font-size: 13px; padding: 2px;");
+    int idx = ui->verticalLayout->indexOf(ui->bottomLine);
+    ui->verticalLayout->insertWidget(idx, nextPreviewLabel);
+
+    ui->action_hidenp->setCheckable(true);
 
     setStyleSheet(R"(
         QMainWindow {
@@ -314,8 +322,11 @@ void MainWindow::onExitActionTriggered()
 void MainWindow::onHideNextActionTriggered()
 {
     hideNextPerson = !hideNextPerson;
+    ui->action_hidenp->setChecked(hideNextPerson);
     updateUI();
-    showStatus(hideNextPerson ? tr("Next person hidden") : tr("Next person visible"));
+    showStatus(hideNextPerson
+        ? tr("Names will be hidden on pick. Toggle off to reveal.")
+        : tr("Names will be shown on pick."));
 }
 
 void MainWindow::onAllRandomActionTriggered()
@@ -356,12 +367,21 @@ void MainWindow::updateUI()
     if (allDone) {
         ui->BrowserName->setText(tr("All done! Click Next to restart."));
         ui->progressShower->setValue(100);
+        nextPreviewLabel->clear();
     } else if (currentIndex < randomIndices.size()) {
-        if (hideNextPerson) {
-            ui->BrowserName->setText(tr("*** Hidden ***"));
+        QString currentName = QString::fromStdString(names[randomIndices[currentIndex]]);
+        ui->BrowserName->setText(currentName);
+
+        size_t nextIdx = currentIndex + 1;
+        if (nextIdx < randomIndices.size()) {
+            QString nextName = QString::fromStdString(names[randomIndices[nextIdx]]);
+            if (hideNextPerson) {
+                nextPreviewLabel->setText(tr("Next: *** Hidden ***"));
+            } else {
+                nextPreviewLabel->setText(tr("Next: %1").arg(nextName));
+            }
         } else {
-            QString currentName = QString::fromStdString(names[randomIndices[currentIndex]]);
-            ui->BrowserName->setText(currentName);
+            nextPreviewLabel->setText(tr("Next: ---"));
         }
     }
 

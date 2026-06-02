@@ -120,9 +120,8 @@ void TUI::drawHeader(const std::string& modeDesc) {
     std::cout << header;
 }
 
-void TUI::drawName(const std::string& name, bool hideNext) {
-    std::string displayName = hideNext ? i18n::Localizer::get(i18n::ID::TUI_HIDDEN) : name;
-    std::string centered = centerText(displayName, width);
+void TUI::drawName(const std::string& name) {
+    std::string centered = centerText(name, width);
     if ((int)centered.size() > width) centered = centered.substr(0, width);
 
     for (int r = 2; r <= 4; r++) {
@@ -132,6 +131,17 @@ void TUI::drawName(const std::string& name, bool hideNext) {
 
     ansiMove(4, 2);
     std::cout << centered;
+}
+
+void TUI::drawNextPreview(const std::string& nextName, bool hideNext) {
+    std::string label = i18n::Localizer::get(i18n::ID::TUI_NEXT_LABEL);
+    std::string display = hideNext ? i18n::Localizer::get(i18n::ID::TUI_HIDDEN) : nextName;
+    std::string text = label + " " + display;
+    if ((int)text.size() > width - 2) text = text.substr(0, width - 2);
+
+    ansiMove(6, 2);
+    ansiClearLine();
+    std::cout << text;
 }
 
 void TUI::drawProgress(size_t current, size_t total) {
@@ -163,7 +173,8 @@ void TUI::drawStatus(const std::string& msg) {
 }
 
 void TUI::showPickScreen(const std::string& name, size_t current, size_t total,
-                          const std::string& modeDesc, bool hideNext) {
+                          const std::string& modeDesc,
+                          const std::string& nextName, bool hideNext) {
     if (!drawn) {
         ansiClearScreen();
         drawFrame();
@@ -171,7 +182,8 @@ void TUI::showPickScreen(const std::string& name, size_t current, size_t total,
     }
 
     drawHeader(modeDesc);
-    drawName(name, hideNext);
+    drawName(name);
+    drawNextPreview(nextName, hideNext);
     drawProgress(current, total);
     drawStatus(lastStatus);
     lastStatus.clear();

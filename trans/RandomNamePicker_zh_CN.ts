@@ -350,6 +350,10 @@
         <translation>*** 已隐藏 ***</translation>
     </message>
     <message>
+        <source>TUI_NEXT_LABEL</source>
+        <translation>下一个:</translation>
+    </message>
+    <message>
         <source>TUI_HINT_DONE</source>
         <translation>输入&apos;exit&apos;退出或&apos;restart&apos;重新开始</translation>
     </message>

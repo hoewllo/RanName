@@ -46,6 +46,7 @@ private:
     Ui::mainWindow *ui;
     QTranslator* translator;
     QLabel* timeLabel;
+    QLabel* nextPreviewLabel;
     std::vector<std::string> names;
     std::vector<size_t> randomIndices;
     size_t currentIndex;

@@ -66,11 +66,17 @@ public:
             const std::string& name = nameList.getNameAt(index);
             size_t current = nameList.getCount() - randomizer->getRemainingCount() - 1;
             size_t total = nameList.getCount();
-            hideNext = false;
+
+            std::string nextName;
+            if (randomizer->hasNext()) {
+                size_t nextIdx = randomizer->peekNextIndex();
+                nextName = nameList.getNameAt(nextIdx);
+            }
 
             while (true) {
                 tui.showPickScreen(name, current, total,
-                                  configManager.getModeDescription(), hideNext);
+                                  configManager.getModeDescription(),
+                                  nextName, hideNext);
 
                 ui::TUIAction action = tui.getAction();
                 if (action == ui::TUIAction::NEXT) {

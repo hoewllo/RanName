@@ -49,6 +49,7 @@ static const char* idKeys[] = {
     "TUI_DONE",
     "TUI_EMPTY",
     "TUI_HIDDEN",
+    "TUI_NEXT_LABEL",
     "TUI_HINT_DONE",
     "TUI_HINT_EXIT",
     "SETUP_HINT_LIST",

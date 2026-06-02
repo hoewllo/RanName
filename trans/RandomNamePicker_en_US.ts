@@ -366,6 +366,10 @@
         <translation>*** Hidden ***</translation>
     </message>
     <message>
+        <source>TUI_NEXT_LABEL</source>
+        <translation>Next:</translation>
+    </message>
+    <message>
         <source>TUI_HINT_DONE</source>
         <translation>Type &apos;exit&apos; to exit or &apos;restart&apos; to restart</translation>
     </message>

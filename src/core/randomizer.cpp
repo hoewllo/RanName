@@ -28,6 +28,13 @@ namespace core {
         return randomIndices[currentIndex++];
     }
 
+    size_t Randomizer::peekNextIndex() const {
+        if (currentIndex >= randomIndices.size()) {
+            return randomIndices.size();
+        }
+        return randomIndices[currentIndex];
+    }
+
     bool Randomizer::hasNext() const {
         return currentIndex < randomIndices.size();
     }
